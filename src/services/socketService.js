@@ -41,6 +41,147 @@ class SocketService {
     }
   }
 
+  // Verifica se um servidor responde no endpoint /api/ping (mais leve que /api/status)
+  async checkServerPing(url, timeoutMs = 1200) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(`${url}/api/ping`, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (!response.ok) return false;
+      const text = await response.text();
+      return text && text.includes('HISTORIA_EM_BITS_OK');
+    } catch (e) {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // Fallback: verifica /api/status (compatibilidade com versões antigas do servidor)
+  async checkServerHealth(url, timeoutMs = 1200) {
+    // Tenta /api/ping primeiro (mais rápido)
+    if (await this.checkServerPing(url, timeoutMs)) return true;
+    // Fallback para /api/status
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(`${url}/api/status`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      if (!response.ok) return false;
+      const data = await response.json();
+      return data && data.status === 'online' && typeof data.activeRooms === 'number';
+    } catch (e) {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // Descoberta automática de servidor na rede local
+  // onProgress(msg) — callback opcional para feedback em tempo real na UI
+  async autoDiscoverServer(onProgress = null) {
+    const notify = (msg) => {
+      console.log('[AutoDiscover]', msg);
+      if (onProgress) onProgress(msg);
+    };
+
+    // 1. Testa primeiro a URL atual configurada
+    notify(`Testando ${this.serverUrl}...`);
+    if (this.serverUrl && (await this.checkServerPing(this.serverUrl, 1500))) {
+      notify(`✅ Servidor encontrado em ${this.serverUrl}`);
+      return { found: true, url: this.serverUrl };
+    }
+
+    // Helper: retorna o primeiro IP que responder de um lote
+    const findFirstOnline = (urls, timeoutMs = 1000) =>
+      new Promise((resolve) => {
+        if (!urls.length) return resolve(null);
+        let pending = urls.length;
+        let settled = false;
+        urls.forEach((url) => {
+          this.checkServerPing(url, timeoutMs).then((ok) => {
+            if (settled) return;
+            if (ok) {
+              settled = true;
+              resolve(url);
+            } else {
+              pending -= 1;
+              if (pending === 0) resolve(null);
+            }
+          });
+        });
+      });
+
+    // 2. Testa localhost / emulador primeiro
+    notify('Testando localhost e emulador...');
+    const localFound = await findFirstOnline(
+      ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://10.0.2.2:3000'],
+      600
+    );
+    if (localFound) {
+      this.setServerUrl(localFound);
+      notify(`✅ Servidor local encontrado: ${localFound}`);
+      return { found: true, url: localFound };
+    }
+
+    // 3. Monta sub-redes prioritárias
+    // Hotspot Android: 192.168.43.x; iPhone: 172.20.10.x; Windows: 192.168.137.x
+    const subnets = [];
+    const currentMatch = (this.serverUrl || '').match(/(\d+\.\d+\.\d+)\.\d+/);
+    if (currentMatch && currentMatch[1]) subnets.push(currentMatch[1]);
+    [
+      '192.168.43',  // Hotspot Android (padrão)
+      '192.168.1',
+      '192.168.0',
+      '192.168.15',
+      '192.168.137', // Hotspot Windows
+      '172.20.10',   // Hotspot iPhone
+      '10.0.0',
+      '10.42.0',     // Hotspot Linux
+    ].forEach((s) => { if (!subnets.includes(s)) subnets.push(s); });
+
+    // 4. Para cada sub-rede, varrer IPs priorizando extremos (.1, .100, .105, .254)
+    // e depois o meio — assim encontra mais rápido sem esperar varrer 254 IPs
+    const batchSize = 60;
+    for (const prefix of subnets) {
+      notify(`🔍 Varrendo rede ${prefix}.x...`);
+
+      // Prioridade: IPs mais comuns de gateways/PCs
+      const priorityIps = [1, 2, 100, 101, 105, 110, 50, 254, 200, 150];
+      const candidates = [];
+      // Primeiro os IPs de alta prioridade
+      priorityIps.forEach((i) => {
+        const url = `http://${prefix}.${i}:3000`;
+        if (url !== this.serverUrl) candidates.push(url);
+      });
+      // Depois o resto 1..254 que ainda não foi incluído
+      for (let i = 1; i <= 254; i++) {
+        if (priorityIps.includes(i)) continue;
+        const url = `http://${prefix}.${i}:3000`;
+        if (url !== this.serverUrl) candidates.push(url);
+      }
+
+      for (let i = 0; i < candidates.length; i += batchSize) {
+        const batch = candidates.slice(i, i + batchSize);
+        const foundUrl = await findFirstOnline(batch, 1000);
+        if (foundUrl) {
+          this.setServerUrl(foundUrl);
+          notify(`✅ Servidor encontrado: ${foundUrl}`);
+          return { found: true, url: foundUrl };
+        }
+      }
+    }
+
+    notify('❌ Servidor não encontrado em nenhuma sub-rede.');
+    return { found: false, url: this.serverUrl };
+  }
+
   connect(customUrl = null) {
     if (customUrl) {
       this.setServerUrl(customUrl);

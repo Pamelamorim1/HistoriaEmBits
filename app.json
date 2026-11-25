@@ -8,11 +8,15 @@
     "userInterfaceStyle": "dark",
     "android": {
       "package": "com.historiaembits.app",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#0F172A",
         "foregroundImage": "./assets/logo.jpg"
       }
     },
+    "plugins": [
+      "./plugins/withCleartextTraffic"
+    ],
     "web": {
       "favicon": "./assets/logo.jpg"
     },

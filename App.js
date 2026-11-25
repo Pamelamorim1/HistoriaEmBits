@@ -27,6 +27,19 @@ export default function App() {
 
   const localEngineRef = useRef(null);
 
+  // Descoberta dinâmica do servidor na rede local ao abrir o app
+  useEffect(() => {
+    let mounted = true;
+    socketService.autoDiscoverServer().then((res) => {
+      if (mounted && res?.found && res.url) {
+        setServerUrl(res.url);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Inscrever-se nos eventos do Socket.io
   useEffect(() => {
     const unsubRoomCreated = socketService.subscribe('room_created', ({ roomId, player, room }) => {
@@ -374,6 +387,13 @@ export default function App() {
           onUpdateServerUrl={(newUrl) => {
             setServerUrl(newUrl);
             socketService.setServerUrl(newUrl);
+          }}
+          onAutoDiscoverServer={async (onProgress) => {
+            const res = await socketService.autoDiscoverServer(onProgress);
+            if (res?.found && res.url) {
+              setServerUrl(res.url);
+            }
+            return res;
           }}
         />
       )}

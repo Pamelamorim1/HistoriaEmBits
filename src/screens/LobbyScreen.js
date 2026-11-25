@@ -118,13 +118,13 @@ export default function LobbyScreen({
 
         {/* Action Buttons */}
         <View style={styles.actionRow}>
-          {isHost && players.length < 5 && onAddBot && (
+          {/* {isHost && players.length < 5 && onAddBot && (
             <TouchableOpacity style={styles.addBotBtn} onPress={onAddBot}>
               <Text style={styles.addBotBtnText}>
                 🤖 Adicionar Colega Virtual para Teste (+1)
               </Text>
             </TouchableOpacity>
-          )}
+          )} */}
 
           {isHost ? (
             <TouchableOpacity

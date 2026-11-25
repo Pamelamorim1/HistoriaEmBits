@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Share,
 } from 'react-native';
 import { Colors } from '../theme/colors';
 import BinaryRain from '../components/BinaryRain';
@@ -22,11 +23,61 @@ export default function HomeScreen({
   onOpenGuide,
   serverUrl,
   onUpdateServerUrl,
+  onAutoDiscoverServer,
 }) {
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [mode, setMode] = useState('menu'); // 'menu' | 'join' | 'create' | 'config'
   const [tempIp, setTempIp] = useState(serverUrl || '192.168.1.100:3000');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState('');
+
+  useEffect(() => {
+    if (serverUrl) {
+      setTempIp(serverUrl);
+    }
+  }, [serverUrl]);
+
+  const handleCopyOrShareHost = async () => {
+    const hostToShare = serverUrl || tempIp;
+    if (Platform.OS === 'web' && navigator?.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(hostToShare);
+        Alert.alert('Host Copiado!', `Endereço copiado:\n${hostToShare}`);
+        return;
+      } catch (e) {}
+    }
+    try {
+      await Share.share({
+        message: `Conecte no servidor do História em Bits usando este Host:\n${hostToShare}`,
+      });
+    } catch (e) {
+      Alert.alert('Host do Servidor', `Copie e informe aos colegas:\n${hostToShare}`);
+    }
+  };
+
+  const handleAutoDiscover = async () => {
+    if (!onAutoDiscoverServer || isScanning) return;
+    setIsScanning(true);
+    setScanStatus('Iniciando varredura da rede...');
+    try {
+      const res = await onAutoDiscoverServer((msg) => setScanStatus(msg));
+      if (res?.found) {
+        setTempIp(res.url);
+        setScanStatus('');
+        Alert.alert('Servidor Encontrado!', `Conectado automaticamente em:\n${res.url}`);
+      } else {
+        setScanStatus('');
+        Alert.alert(
+          'Servidor Não Encontrado',
+          'Não foi possível detectar o servidor automaticamente.\n\n1. Verifique se "npm run server" está rodando no PC.\n2. O PC e o celular devem estar na mesma rede Wi-Fi ou no Roteador do celular.\n3. Digite o IP manualmente (veja o IP listado no console do servidor).'
+        );
+      }
+    } finally {
+      setIsScanning(false);
+      setScanStatus('');
+    }
+  };
 
   const handleCreate = () => {
     if (!playerName.trim()) {
@@ -171,9 +222,20 @@ export default function HomeScreen({
 
             <View style={styles.serverInfoBox}>
               <Text style={styles.serverInfoLabel}>Endereço do Servidor de Conexão:</Text>
-              <Text style={styles.serverInfoUrl}>{serverUrl}</Text>
+              <Text style={styles.serverInfoUrl} selectable>{serverUrl}</Text>
+              <TouchableOpacity onPress={handleCopyOrShareHost}>
+                <Text style={styles.changeIpText}>📋 Copiar / Compartilhar Host com Colegas</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleAutoDiscover} disabled={isScanning}>
+                <Text style={styles.changeIpText}>
+                  {isScanning ? '⏳ Buscando servidor na rede...' : '🔍 Detectar Servidor Automaticamente'}
+                </Text>
+              </TouchableOpacity>
+              {isScanning && scanStatus ? (
+                <Text style={styles.scanStatusText}>{scanStatus}</Text>
+              ) : null}
               <TouchableOpacity onPress={() => setMode('config')}>
-                <Text style={styles.changeIpText}>[ Alterar IP / Modo Roteador ]</Text>
+                <Text style={styles.changeIpText}>[ Alterar IP Manualmente ]</Text>
               </TouchableOpacity>
             </View>
 
@@ -195,21 +257,21 @@ export default function HomeScreen({
               Peça o código da sala ao líder que criou a turma (ex: SALA-01, SALA-02).
             </Text>
 
-            {/* Quick 1-touch button for Android Hotspot */}
+            {/* Quick 1-touch button for Auto-Discovery */}
             <TouchableOpacity
               style={styles.hotspotQuickBtn}
-              onPress={() => {
-                onUpdateServerUrl('192.168.43.1:3000');
-                Alert.alert(
-                  'Modo Roteador do Colega Ativado',
-                  'Servidor configurado para 192.168.43.1:3000 (IP padrão do Ponto de Acesso do celular líder).'
-                );
-              }}
+              disabled={isScanning}
+              onPress={handleAutoDiscover}
             >
               <Text style={styles.hotspotQuickBtnText}>
-                📶 Conectado no Roteador Wi-Fi do Colega? Toque aqui
+                {isScanning
+                  ? '⏳ Buscando servidor na rede...'
+                  : '🔍 Detectar Servidor na Rede (Wi-Fi / Roteador)'}
               </Text>
             </TouchableOpacity>
+            {isScanning && scanStatus ? (
+              <Text style={styles.scanStatusText}>{scanStatus}</Text>
+            ) : null}
 
             <Text style={styles.inputLabel}>CÓDIGO DA SALA:</Text>
             <TextInput
@@ -240,6 +302,21 @@ export default function HomeScreen({
               Insira o IP do computador ou dispositivo que está rodando o servidor Node.js (ex: 192.168.1.105:3000 ou localhost:3000).
             </Text>
 
+            <View style={styles.serverInfoBox}>
+              <Text style={styles.serverInfoLabel}>
+                HOST ATUAL (CONFIGURE ESTE ENDEREÇO NAS OUTRAS CONTAS):
+              </Text>
+              <Text style={styles.serverInfoUrl} selectable>
+                {serverUrl}
+              </Text>
+              <TouchableOpacity
+                style={[styles.hotspotQuickBtn, { marginTop: 8, marginBottom: 0, width: '100%' }]}
+                onPress={handleCopyOrShareHost}
+              >
+                <Text style={styles.hotspotQuickBtnText}>📋 Copiar / Compartilhar Host</Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.inputLabel}>ENDEREÇO DO SERVIDOR (IP:PORTA):</Text>
             <TextInput
               style={styles.textInput}
@@ -250,6 +327,19 @@ export default function HomeScreen({
               autoCapitalize="none"
               autoCorrect={false}
             />
+
+            <TouchableOpacity
+              style={[styles.hotspotQuickBtn, { marginBottom: 10 }]}
+              disabled={isScanning}
+              onPress={handleAutoDiscover}
+            >
+              <Text style={styles.hotspotQuickBtnText}>
+                {isScanning ? '⏳ Buscando servidor na rede...' : '🔍 Detectar IP Automaticamente'}
+              </Text>
+            </TouchableOpacity>
+            {isScanning && scanStatus ? (
+              <Text style={styles.scanStatusText}>{scanStatus}</Text>
+            ) : null}
 
             <TouchableOpacity style={styles.confirmBtn} onPress={handleSaveIp}>
               <Text style={styles.confirmBtnText}>Salvar Endereço</Text>
@@ -530,5 +620,14 @@ const styles = StyleSheet.create({
   cancelBtnText: {
     color: Colors.textMuted,
     fontSize: 13,
+  },
+  scanStatusText: {
+    color: Colors.textMuted,
+    fontSize: 10,
+    fontFamily: 'monospace',
+    textAlign: 'center',
+    marginTop: -8,
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
 });

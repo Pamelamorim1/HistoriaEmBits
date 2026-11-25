@@ -964,11 +964,29 @@ app.get('/api/reports', (req, res) => {
   res.json({ reports: gameReports });
 });
 
+// Endpoint leve para descoberta automática (responde texto puro sem JSON)
+app.get('/api/ping', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Content-Type', 'text/plain');
+  res.send('HISTORIA_EM_BITS_OK');
+});
+
 server.listen(PORT, '0.0.0.0', () => {
+  const os = require('os');
+  const ifaces = os.networkInterfaces();
   console.log(`===============================================`);
   console.log(`🎮 História em Bits — Servidor Socket.io Online`);
   console.log(`📡 Porta: ${PORT}`);
   console.log(`🔐 Senha do Professor: ${PROF_PASSWORD}`);
   console.log(`⚡ Salas simultâneas permitidas: ${MAX_ROOMS}`);
+  console.log(`-----------------------------------------------`);
+  console.log(`📲 ENDEREÇOS PARA O APP (configure no celular):`);
+  Object.entries(ifaces).forEach(([name, addrs]) => {
+    (addrs || []).forEach((addr) => {
+      if (addr.family === 'IPv4' && !addr.internal) {
+        console.log(`   ✅ http://${addr.address}:${PORT}  [${name}]`);
+      }
+    });
+  });
   console.log(`===============================================`);
 });
