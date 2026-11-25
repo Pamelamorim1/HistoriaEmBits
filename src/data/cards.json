@@ -1,0 +1,184 @@
+{
+  "deck_id": "era_das_revolucoes_v1",
+  "titulo_baralho": "Era das Revoluções (Séculos XVIII e XIX)",
+  "carta_central_inicial": {
+    "id": "card_00",
+    "titulo": "Independência do Brasil",
+    "ano_decimal": 1822,
+    "ano_binario": "11100011110",
+    "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Independ%C3%AAncia_ou_Morte.jpg/800px-Independ%C3%AAncia_ou_Morte.jpg",
+    "resumo_historico": "Proclamação da ruptura política entre Brasil e Portugal às margens do riacho Ipiranga por D. Pedro I."
+  },
+  "cartas": [
+    {
+      "id": "card_01",
+      "titulo": "Queda da Bastilha (Revolução Francesa)",
+      "ano_decimal": 1789,
+      "ano_binario": "11011111101",
+      "distratores_binarios": [
+        "11011100110",
+        "11100001100"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Prise_de_la_Bastille.jpg/800px-Prise_de_la_Bastille.jpg",
+      "resumo_historico": "Marco inicial da Revolução Francesa e símbolo da queda do absolutismo monárquico na Europa.",
+      "dicas": {
+        "dica_1_contexto": "Este acontecimento simbolizou o início da Revolução Francesa e a queda do Absolutismo no final do século XVIII.",
+        "dica_2_matematica": "O bit mais significativo (2^10) vale 1024, e o ano ocorre na década de 1780. O código 11011100110 está incorreto.",
+        "dica_3_especifica": "O último dígito do código binário correto é 1 (portanto, o ano é um número ímpar entre 1785 e 1791)."
+      }
+    },
+    {
+      "id": "card_02",
+      "titulo": "Declaração de Independência dos EUA",
+      "ano_decimal": 1776,
+      "ano_binario": "11011110000",
+      "distratores_binarios": [
+        "11011111101",
+        "11100000111"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Declaration_independence.jpg/800px-Declaration_independence.jpg",
+      "resumo_historico": "As Treze Colônias romperam laços com a Grã-Bretanha, inspiradas pelos ideais iluministas de liberdade e direitos naturais.",
+      "dicas": {
+        "dica_1_contexto": "As Treze Colônias declararam ruptura com o Império Britânico antes da Revolução Francesa.",
+        "dica_2_matematica": "Repare que os últimos quatro dígitos do binário correto são '0000', o que torna o ano divisível por 16. O código 11100000111 está incorreto.",
+        "dica_3_especifica": "O evento ocorreu na década de 1770, exatamente 13 anos antes da Queda da Bastilha."
+      }
+    },
+    {
+      "id": "card_03",
+      "titulo": "Aperfeiçoamento da Máquina a Vapor (James Watt)",
+      "ano_decimal": 1769,
+      "ano_binario": "11011101001",
+      "distratores_binarios": [
+        "11011100010",
+        "11100001001"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Watt_steam_pumping_engine.jpg/800px-Watt_steam_pumping_engine.jpg",
+      "resumo_historico": "Inovação tecnológica crucial que impulsionou a Primeira Revolução Industrial na Inglaterra.",
+      "dicas": {
+        "dica_1_contexto": "Ocorreu na segunda metade do século XVIII, antes da independência dos Estados Unidos.",
+        "dica_2_matematica": "O ano termina com o dígito 9 e o código 11100001001 ultrapassa o ano 1800.",
+        "dica_3_especifica": "O binário correto possui exatamente 7 bits com valor 1 e o ano decimal é anterior a 1770."
+      }
+    },
+    {
+      "id": "card_04",
+      "titulo": "Início da Revolução Haitiana",
+      "ano_decimal": 1791,
+      "ano_binario": "11011111111",
+      "distratores_binarios": [
+        "11011111000",
+        "11100010001"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/General_Toussaint_Louverture.jpg/800px-General_Toussaint_Louverture.jpg",
+      "resumo_historico": "Maior e mais bem-sucedida rebelião de escravizados do continente americano, que resultou na independência do Haiti.",
+      "dicas": {
+        "dica_1_contexto": "Iniciou logo após a Revolução Francesa, inspirado nos ideais de liberdade e igualdade.",
+        "dica_2_matematica": "O código binário correto tem muitos bits 1 consecutivos (termina em 1111111). O código 11100010001 está incorreto.",
+        "dica_3_especifica": "O ano é 1791, ocorrendo exatamente dois anos após a Queda da Bastilha."
+      }
+    },
+    {
+      "id": "card_05",
+      "titulo": "Chegada da Família Real Portuguesa ao Brasil",
+      "ano_decimal": 1808,
+      "ano_binario": "11100010000",
+      "distratores_binarios": [
+        "11011110000",
+        "11100011100"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Embarque_da_Fam%C3%ADlia_Real_para_o_Brasil.jpg/800px-Embarque_da_Fam%C3%ADlia_Real_para_o_Brasil.jpg",
+      "resumo_historico": "A corte de D. João VI desembarcou em Salvador e depois no Rio de Janeiro, fugindo das tropas de Napoleão Bonaparte.",
+      "dicas": {
+        "dica_1_contexto": "Início do século XIX, abrindo os portos brasileiros ao comércio mundial.",
+        "dica_2_matematica": "O ano é o início do período joanino (1808). O código 11011110000 pertence ao século XVIII.",
+        "dica_3_especifica": "1808 em binário: 1024 + 512 + 256 + 16 = 1808."
+      }
+    },
+    {
+      "id": "card_06",
+      "titulo": "Congresso de Viena",
+      "ano_decimal": 1814,
+      "ano_binario": "11100010110",
+      "distratores_binarios": [
+        "11100011010",
+        "11011101110"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Congress_of_Vienna.PNG/800px-Congress_of_Vienna.PNG",
+      "resumo_historico": "Conferência internacional entre as potências europeias para redesenhar o mapa político após a primeira derrota napoleônica.",
+      "dicas": {
+        "dica_1_contexto": "Conferência conservadora para restaurar o Antigo Regime europeu na década de 1810.",
+        "dica_2_matematica": "O ano é par e imediatamente anterior à Batalha de Waterloo. O código 11011101110 está incorreto.",
+        "dica_3_especifica": "O ano é 1814 e o código binário termina em 10110."
+      }
+    },
+    {
+      "id": "card_07",
+      "titulo": "Batalha de Waterloo (Derrota de Napoleão)",
+      "ano_decimal": 1815,
+      "ano_binario": "11100010111",
+      "distratores_binarios": [
+        "11100010000",
+        "11100100111"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Battle_of_Waterloo_1815.PNG/800px-Battle_of_Waterloo_1815.PNG",
+      "resumo_historico": "Confronto definitivo que encerrou os Cem Dias e o Império Napoleônico na Europa.",
+      "dicas": {
+        "dica_1_contexto": "Queda definitiva de Napoleão no mesmo ano de encerramento do Congresso de Viena.",
+        "dica_2_matematica": "É exatamente 1 unidade maior que 1814 (11100010110). O código 11100010000 está incorreto.",
+        "dica_3_especifica": "O ano é 1815 e termina com o bit 1."
+      }
+    },
+    {
+      "id": "card_08",
+      "titulo": "Confederação do Equador",
+      "ano_decimal": 1824,
+      "ano_binario": "11100100000",
+      "distratores_binarios": [
+        "11100011110",
+        "11100101010"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Execu%C3%A7%C3%A3o_de_Frei_Caneca.jpg/800px-Execu%C3%A7%C3%A3o_de_Frei_Caneca.jpg",
+      "resumo_historico": "Movimento republicano e separatista em Pernambuco e províncias vizinhas em oposição ao absolutismo de D. Pedro I.",
+      "dicas": {
+        "dica_1_contexto": "Ocorreu no Nordeste brasileiro dois anos após a proclamação da Independência do Brasil.",
+        "dica_2_matematica": "1824 é múltiplo de 32 (termina em 00000 no binário). O código 11100011110 é a independência de 1822.",
+        "dica_3_especifica": "O ano de 1824 é o mesmo ano da 1ª Constituição outorgada do Império do Brasil."
+      }
+    },
+    {
+      "id": "card_09",
+      "titulo": "Publicação do Manifesto Comunista",
+      "ano_decimal": 1848,
+      "ano_binario": "11100111000",
+      "distratores_binarios": [
+        "11100110000",
+        "11101001000"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Karl_Marx_001.jpg/800px-Karl_Marx_001.jpg",
+      "resumo_historico": "Karl Marx e Friedrich Engels publicaram a obra durante a Primavera dos Povos na Europa revolucionária.",
+      "dicas": {
+        "dica_1_contexto": "Ano da Primavera dos Povos, onda revolucionária que sacudiu a Europa em meados do século XIX.",
+        "dica_2_matematica": "O ano é 1848: 1024 + 512 + 256 + 32 + 16 + 8 = 1848. O código 11101001000 ultrapassa a década de 1850.",
+        "dica_3_especifica": "Termina com 3 zeros no código binário ('11100111000')."
+      }
+    },
+    {
+      "id": "card_10",
+      "titulo": "Proclamação da República no Brasil",
+      "ano_decimal": 1889,
+      "ano_binario": "11101100001",
+      "distratores_binarios": [
+        "11101011001",
+        "11101101000"
+      ],
+      "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Proclama%C3%A7%C3%A3o_da_Rep%C3%BAblica_por_Benedito_Calixto_1893.jpg/800px-Proclama%C3%A7%C3%A3o_da_Rep%C3%BAblica_por_Benedito_Calixto_1893.jpg",
+      "resumo_historico": "Marechal Deodoro da Fonseca liderou o golpe que destituiu o imperador D. Pedro II e encerrou a monarquia brasileira.",
+      "dicas": {
+        "dica_1_contexto": "Fim do Segundo Reinado no Brasil, ocorrido um ano após a abolição da escravidão (Lei Áurea).",
+        "dica_2_matematica": "O ano termina em 89 no final do século XIX. O código 11101101000 é par e incorreto.",
+        "dica_3_especifica": "Ano 1889: 1024 + 512 + 256 + 64 + 32 + 1 = 1889."
+      }
+    }
+  ]
+}
