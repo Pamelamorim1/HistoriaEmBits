@@ -16,6 +16,8 @@ const io = new Server(server, {
     origin: '*',
     methods: ['GET', 'POST'],
   },
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 const PORT = process.env.PORT || 3000;
@@ -67,11 +69,25 @@ function prepareCardRound(card) {
   };
 }
 
+function isSocketLeader(room, socket) {
+  if (!room || !room.players || room.players.length === 0) return false;
+  const currentLeader = room.players[room.leaderIndex];
+  if (!currentLeader) return false;
+  return socket.id === currentLeader.socketId || socket.playerId === currentLeader.id || socket.id === currentLeader.id;
+}
+
+function findPlayerInRoom(room, socket) {
+  if (!room || !room.players) return null;
+  return room.players.find(
+    (p) => p.socketId === socket.id || p.id === socket.playerId || p.id === socket.id
+  );
+}
+
 io.on('connection', (socket) => {
   console.log(`[Socket] Conectado: ${socket.id}`);
 
   // 1. Criar Sala
-  socket.on('create_room', ({ playerName }) => {
+  socket.on('create_room', ({ playerName, playerId }) => {
     if (!playerName || !playerName.trim()) {
       return socket.emit('error_message', 'Nome de jogador obrigatório.');
     }
@@ -91,10 +107,14 @@ io.on('connection', (socket) => {
       );
     }
 
+    const pId = playerId || `p_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const player = {
-      id: socket.id,
+      id: pId,
+      socketId: socket.id,
       name: playerName.trim(),
       isHost: true,
+      connected: true,
+      lastSeen: Date.now(),
     };
 
     const newRoom = {
@@ -130,13 +150,14 @@ io.on('connection', (socket) => {
     rooms.set(roomId, newRoom);
     socket.join(roomId);
     socket.roomId = roomId;
+    socket.playerId = pId;
 
-    socket.emit('room_created', { roomId, player, room: sanitizeRoomState(newRoom, socket.id) });
+    socket.emit('room_created', { roomId, player, room: sanitizeRoomState(newRoom, pId) });
     io.to(roomId).emit('room_updated', sanitizeRoomState(newRoom));
   });
 
   // 2. Entrar em Sala
-  socket.on('join_room', ({ roomId, playerName }) => {
+  socket.on('join_room', ({ roomId, playerName, playerId }) => {
     if (!playerName || !playerName.trim()) {
       return socket.emit('error_message', 'Nome de jogador obrigatório.');
     }
@@ -147,6 +168,30 @@ io.on('connection', (socket) => {
       return socket.emit('error_message', `Sala "${cleanRoomId}" não encontrada.`);
     }
 
+    // Se o jogador já pertence à sala (pelo ID estável ou pelo mesmo nome), reconecta sem expulsar
+    const existingPlayer = room.players.find(
+      (p) => (playerId && p.id === playerId) || p.name.trim().toLowerCase() === playerName.trim().toLowerCase()
+    );
+
+    if (existingPlayer) {
+      if (existingPlayer.disconnectTimer) {
+        clearTimeout(existingPlayer.disconnectTimer);
+        existingPlayer.disconnectTimer = null;
+      }
+      existingPlayer.socketId = socket.id;
+      existingPlayer.connected = true;
+      existingPlayer.disconnectedAt = null;
+      existingPlayer.lastSeen = Date.now();
+      socket.join(cleanRoomId);
+      socket.roomId = cleanRoomId;
+      socket.playerId = existingPlayer.id;
+
+      socket.emit('room_joined', { roomId: cleanRoomId, player: existingPlayer, room: sanitizeRoomState(room, existingPlayer.id) });
+      io.to(cleanRoomId).emit('room_updated', sanitizeRoomState(room));
+      console.log(`[Socket] Jogador ${existingPlayer.name} restabeleceu presença na ${cleanRoomId}`);
+      return;
+    }
+
     if (room.status !== 'lobby') {
       return socket.emit('error_message', 'Esta partida já foi iniciada.');
     }
@@ -155,18 +200,121 @@ io.on('connection', (socket) => {
       return socket.emit('error_message', 'Sala cheia (máximo de 5 participantes).');
     }
 
+    const pId = playerId || `p_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const player = {
-      id: socket.id,
+      id: pId,
+      socketId: socket.id,
       name: playerName.trim(),
       isHost: false,
+      connected: true,
+      lastSeen: Date.now(),
     };
 
     room.players.push(player);
     socket.join(cleanRoomId);
     socket.roomId = cleanRoomId;
+    socket.playerId = pId;
 
-    socket.emit('room_joined', { roomId: cleanRoomId, player, room: sanitizeRoomState(room, socket.id) });
+    socket.emit('room_joined', { roomId: cleanRoomId, player, room: sanitizeRoomState(room, pId) });
     io.to(cleanRoomId).emit('room_updated', sanitizeRoomState(room));
+  });
+
+  // Reconexão explícita após queda transitória de conexão
+  socket.on('reconnect_room', ({ roomId, playerId, playerName }) => {
+    const cleanRoomId = (roomId || '').trim().toUpperCase();
+    if (!rooms.has(cleanRoomId)) {
+      return socket.emit('error_message', `Sala "${cleanRoomId}" não encontrada para reconexão.`);
+    }
+    const room = rooms.get(cleanRoomId);
+    const existingPlayer = room.players.find(
+      (p) => (playerId && p.id === playerId) || (playerName && p.name.trim().toLowerCase() === playerName.trim().toLowerCase())
+    );
+
+    if (existingPlayer) {
+      if (existingPlayer.disconnectTimer) {
+        clearTimeout(existingPlayer.disconnectTimer);
+        existingPlayer.disconnectTimer = null;
+      }
+      existingPlayer.socketId = socket.id;
+      existingPlayer.connected = true;
+      existingPlayer.disconnectedAt = null;
+      existingPlayer.lastSeen = Date.now();
+      socket.join(cleanRoomId);
+      socket.roomId = cleanRoomId;
+      socket.playerId = existingPlayer.id;
+
+      socket.emit('room_reconnected', {
+        roomId: cleanRoomId,
+        player: existingPlayer,
+        room: sanitizeRoomState(room, existingPlayer.id),
+      });
+      io.to(cleanRoomId).emit('room_updated', sanitizeRoomState(room));
+      console.log(`[Socket] Jogador ${existingPlayer.name} reconectou com sucesso na ${cleanRoomId}`);
+    } else {
+      socket.emit('error_message', 'Sessão anterior na sala não encontrada.');
+    }
+  });
+
+  // Heartbeat do Cliente (mantém viva a presença na sala sem deixar a conexão cair)
+  socket.on('player_heartbeat', ({ roomId, playerId }) => {
+    const cleanRoomId = (roomId || '').trim().toUpperCase();
+    if (cleanRoomId && rooms.has(cleanRoomId)) {
+      const room = rooms.get(cleanRoomId);
+      const player = room.players.find((p) => (playerId && p.id === playerId) || p.socketId === socket.id);
+      if (player) {
+        player.lastSeen = Date.now();
+        if (!player.connected || player.socketId !== socket.id) {
+          player.connected = true;
+          player.socketId = socket.id;
+          if (player.disconnectTimer) {
+            clearTimeout(player.disconnectTimer);
+            player.disconnectTimer = null;
+          }
+        }
+      }
+    }
+  });
+
+  // Sair da Sala Intencionalmente
+  socket.on('leave_room', ({ roomId, playerId }) => {
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    if (cleanRoomId && rooms.has(cleanRoomId)) {
+      const room = rooms.get(cleanRoomId);
+      const playerIndex = room.players.findIndex(
+        (p) => (playerId && p.id === playerId) || p.socketId === socket.id
+      );
+
+      if (playerIndex !== -1) {
+        const removedPlayer = room.players[playerIndex];
+        if (removedPlayer.disconnectTimer) {
+          clearTimeout(removedPlayer.disconnectTimer);
+        }
+        room.players.splice(playerIndex, 1);
+        console.log(`[Socket] Jogador ${removedPlayer.name} saiu voluntariamente da sala ${cleanRoomId}`);
+
+        if (room.players.length === 0) {
+          rooms.delete(cleanRoomId);
+        } else {
+          if (room.leaderIndex >= room.players.length) {
+            room.leaderIndex = 0;
+          }
+          if (room.timelineProposal) {
+            const allAccepted = room.players.every((p) => room.timelineProposal.votes[p.id] === true);
+            if (allAccepted) {
+              const targetIndex = room.timelineProposal.insertIndex;
+              room.timelineProposal = null;
+              executeTimelinePlacement(room, targetIndex);
+            }
+          }
+          io.to(cleanRoomId).emit('player_left', {
+            playerName: removedPlayer.name,
+            room: sanitizeRoomState(room),
+          });
+        }
+      }
+      socket.leave(cleanRoomId);
+      socket.roomId = null;
+    }
   });
 
   // 3. Iniciar Partida
@@ -221,11 +369,11 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room || room.status !== 'playing' || room.phase !== 'decoding') return;
 
-    const currentLeader = room.players[room.leaderIndex];
-    if (socket.id !== currentLeader.id) {
+    if (!isSocketLeader(room, socket)) {
       return socket.emit('error_message', 'Apenas o Líder da rodada pode selecionar o código.');
     }
 
+    const currentLeader = room.players[room.leaderIndex];
     room.selectedBinary = binaryString;
     // Broadcast real-time selection to all team members
     io.to(roomId).emit('binary_selected', {
@@ -239,8 +387,7 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room || room.status !== 'playing' || room.phase !== 'decoding') return;
 
-    const currentLeader = room.players[room.leaderIndex];
-    if (socket.id !== currentLeader.id) {
+    if (!isSocketLeader(room, socket)) {
       return socket.emit('error_message', 'Apenas o Líder da rodada pode submeter palpites.');
     }
 
@@ -351,8 +498,7 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room || room.status !== 'playing') return;
 
-    const currentLeader = room.players[room.leaderIndex];
-    if (socket.id !== currentLeader.id) {
+    if (!isSocketLeader(room, socket)) {
       return socket.emit('error_message', 'Apenas o Líder pode registrar a decisão do grupo.');
     }
 
@@ -582,8 +728,7 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room || room.status !== 'playing' || room.phase !== 'timeline') return;
 
-    const currentLeader = room.players[room.leaderIndex];
-    if (socket.id !== currentLeader.id) {
+    if (!isSocketLeader(room, socket)) {
       return socket.emit('error_message', 'Apenas o Líder da rodada pode propor o posicionamento da carta.');
     }
 
@@ -592,13 +737,14 @@ io.on('connection', (socket) => {
       return executeTimelinePlacement(room, insertIndex);
     }
 
+    const currentLeader = room.players[room.leaderIndex];
     // Com 2 ou mais jogadores: cria proposta de consenso para toda a equipe aceitar!
     const votes = {};
-    votes[socket.id] = true; // Propositor (Líder) já concorda
+    votes[currentLeader.id] = true; // Propositor (Líder) já concorda
 
     room.timelineProposal = {
       insertIndex,
-      proposerId: socket.id,
+      proposerId: currentLeader.id,
       proposerName: currentLeader.name,
       cardTitle: room.currentCard?.titulo,
       cardYear: room.currentCard?.ano_decimal,
@@ -616,7 +762,7 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room || !room.timelineProposal) return;
 
-    const voter = room.players.find((p) => p.id === socket.id);
+    const voter = findPlayerInRoom(room, socket);
     if (!voter) return;
 
     if (!accept) {
@@ -628,7 +774,7 @@ io.on('connection', (socket) => {
       });
     }
 
-    room.timelineProposal.votes[socket.id] = true;
+    room.timelineProposal.votes[voter.id] = true;
 
     // Checa se TODOS os jogadores da sala aceitaram
     const allAccepted = room.players.every((p) => room.timelineProposal.votes[p.id] === true);
@@ -661,10 +807,11 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room || room.status !== 'playing' || room.phase !== 'timeline') return;
 
-    const currentLeader = room.players[room.leaderIndex];
-    if (socket.id !== currentLeader.id) {
+    if (!isSocketLeader(room, socket)) {
       return socket.emit('error_message', 'Apenas o Líder pode registrar a decisão do grupo.');
     }
+
+    const currentLeader = room.players[room.leaderIndex];
 
     if (action === 'continue') {
       room.promptTimelineThirdAttempt = false;
@@ -743,11 +890,11 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room || room.status !== 'playing' || !room.rescueChallenge) return;
 
-    const currentLeader = room.players[room.leaderIndex];
-    if (socket.id !== currentLeader.id) {
+    if (!isSocketLeader(room, socket)) {
       return socket.emit('error_message', 'Apenas o Líder pode enviar a resposta do Desafio de Resgate.');
     }
 
+    const currentLeader = room.players[room.leaderIndex];
     const expected = room.rescueChallenge.targetDecimal;
     const isCorrect = parseInt(guessedDecimal, 10) === expected;
     room.rescueUsed = true;
@@ -810,6 +957,10 @@ io.on('connection', (socket) => {
     }
 
     if (rooms.has(roomId)) {
+      const room = rooms.get(roomId);
+      room.players.forEach((p) => {
+        if (p.disconnectTimer) clearTimeout(p.disconnectTimer);
+      });
       io.to(roomId).emit('room_closed', 'A sala foi resetada pelo docente.');
       rooms.delete(roomId);
     }
@@ -817,45 +968,79 @@ io.on('connection', (socket) => {
     socket.emit('admin_room_reset_success', { roomId });
   });
 
-  // Desconexão
-  socket.on('disconnect', () => {
-    console.log(`[Socket] Desconectado: ${socket.id}`);
-    if (socket.roomId && rooms.has(socket.roomId)) {
-      const room = rooms.get(socket.roomId);
-      const playerIndex = room.players.findIndex((p) => p.id === socket.id);
+  // Desconexão (Tolerância para oscilações temporárias de rede/Wi-Fi)
+  socket.on('disconnect', (reason) => {
+    console.log(`[Socket] Desconectado: ${socket.id}, motivo: ${reason}`);
+    const roomId = socket.roomId;
+    if (roomId && rooms.has(roomId)) {
+      const room = rooms.get(roomId);
+      const player = room.players.find(
+        (p) => p.socketId === socket.id || (socket.playerId && p.id === socket.playerId)
+      );
 
-      if (playerIndex !== -1) {
-        const removedPlayer = room.players[playerIndex];
-        room.players.splice(playerIndex, 1);
+      if (player) {
+        player.connected = false;
+        player.disconnectedAt = Date.now();
+        console.log(`[Socket] Conexão perdida com ${player.name} (${player.id}) na ${roomId}. Aguardando reconexão (tolerância 120s)...`);
 
-        // Se não sobrar ninguém, fecha sala
-        if (room.players.length === 0) {
-          rooms.delete(socket.roomId);
-        } else {
-          // Ajusta índice do líder se necessário
-          if (room.leaderIndex >= room.players.length) {
-            room.leaderIndex = 0;
-          }
-          io.to(socket.roomId).emit('player_left', {
-            playerName: removedPlayer.name,
-            room: sanitizeRoomState(room),
-          });
+        if (player.disconnectTimer) {
+          clearTimeout(player.disconnectTimer);
         }
+
+        // Não remove imediatamente! Concede 120 segundos para o aparelho reconectar
+        player.disconnectTimer = setTimeout(() => {
+          if (!rooms.has(roomId)) return;
+          const currentRoom = rooms.get(roomId);
+          const pIdx = currentRoom.players.findIndex((p) => p.id === player.id);
+          if (pIdx !== -1 && !currentRoom.players[pIdx].connected) {
+            console.log(`[Socket] Tolerância expirada para ${player.name} na ${roomId}. Removendo da sala.`);
+            const removed = currentRoom.players.splice(pIdx, 1)[0];
+            if (currentRoom.players.length === 0) {
+              rooms.delete(roomId);
+            } else {
+              if (currentRoom.leaderIndex >= currentRoom.players.length) {
+                currentRoom.leaderIndex = 0;
+              }
+              if (currentRoom.timelineProposal) {
+                const allAccepted = currentRoom.players.every((p) => currentRoom.timelineProposal.votes[p.id] === true);
+                if (allAccepted) {
+                  const targetIndex = currentRoom.timelineProposal.insertIndex;
+                  currentRoom.timelineProposal = null;
+                  executeTimelinePlacement(currentRoom, targetIndex);
+                }
+              }
+              io.to(roomId).emit('player_left', {
+                playerName: removed.name,
+                room: sanitizeRoomState(currentRoom),
+              });
+            }
+          }
+        }, 120000);
       }
     }
   });
 });
 
-function sanitizeRoomState(room, forSocketId = null) {
+function sanitizeRoomState(room, forSocketOrPlayerId = null) {
   const currentLeader = room.players[room.leaderIndex] || null;
-  const isLeader = forSocketId ? currentLeader && currentLeader.id === forSocketId : false;
+  const isLeader = forSocketOrPlayerId
+    ? currentLeader && (
+        currentLeader.id === forSocketOrPlayerId ||
+        currentLeader.socketId === forSocketOrPlayerId
+      )
+    : false;
 
   return {
     id: room.id,
     status: room.status,
     phase: room.phase,
     score: room.score,
-    players: room.players,
+    players: room.players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      isHost: !!p.isHost,
+      connected: p.connected !== false,
+    })),
     leaderIndex: room.leaderIndex,
     currentLeaderName: currentLeader ? currentLeader.name : null,
     isLeader,

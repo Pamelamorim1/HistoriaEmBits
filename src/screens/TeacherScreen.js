@@ -7,6 +7,8 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Colors } from '../theme/colors';
 import socketService from '../services/socketService';
@@ -70,33 +72,44 @@ export default function TeacherScreen({ onClose, localReports = [] }) {
 
   if (!isAuthenticated) {
     return (
-      <View style={styles.container}>
-        <View style={styles.loginCard}>
-          <Text style={styles.loginIcon}>🔒</Text>
-          <Text style={styles.loginTitle}>Área do Professor</Text>
-          <Text style={styles.loginSubtitle}>
-            Acesso restrito ao relatório pedagógico e controle de turmas (BNCC EM13CHS103 e EM13CO13).
-          </Text>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.loginScrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+        >
+          <View style={styles.loginCard}>
+            <Text style={styles.loginIcon}>🔒</Text>
+            <Text style={styles.loginTitle}>Área do Professor</Text>
+            <Text style={styles.loginSubtitle}>
+              Acesso restrito ao relatório pedagógico e controle de turmas (BNCC EM13CHS103 e EM13CO13).
+            </Text>
 
-          <Text style={styles.fieldLabel}>SENHA DOCENTE:</Text>
-          <TextInput
-            style={styles.passwordInput}
-            secureTextEntry={true}
-            placeholder="Digite a senha (padrão: PROF2026)"
-            placeholderTextColor={Colors.textMuted}
-            value={password}
-            onChangeText={setPassword}
-          />
+            <Text style={styles.fieldLabel}>SENHA DOCENTE:</Text>
+            <TextInput
+              style={styles.passwordInput}
+              secureTextEntry={true}
+              placeholder="Digite a senha (padrão: PROF2026)"
+              placeholderTextColor={Colors.textMuted}
+              value={password}
+              onChangeText={setPassword}
+            />
 
-          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-            <Text style={styles.loginBtnText}>Entrar no Painel</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+              <Text style={styles.loginBtnText}>Entrar no Painel</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.backBtn} onPress={onClose}>
-            <Text style={styles.backBtnText}>Voltar ao Início</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <TouchableOpacity style={styles.backBtn} onPress={onClose}>
+              <Text style={styles.backBtnText}>Voltar ao Início</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -290,6 +303,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  loginScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 100,
   },
   loginCard: {
     margin: 20,

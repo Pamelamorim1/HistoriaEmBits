@@ -5,6 +5,9 @@ import {
   Modal,
   TextInput,
   TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
 } from 'react-native';
 import { Colors } from '../theme/colors';
@@ -25,65 +28,80 @@ export default function RescueChallengeModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.modalCard}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>⚡ ENERGIA ZERADA • ÚLTIMA CHANCE</Text>
-          </View>
-
-          <Text style={styles.title}>Desafio de Resgate</Text>
-          <Text style={styles.subtitle}>Reinicialização Binária de Emergência</Text>
-
-          <Text style={styles.description}>
-            A pontuação da equipe chegou a 0! Converta este código de 8 bits para decimal para recuperar{' '}
-            <Text style={styles.highlight}>+150 pontos</Text>. Se errar, a equipe entra em{' '}
-            <Text style={styles.dangerHighlight}>Reserva de Emergência</Text>!
-          </Text>
-
-          <View style={styles.binaryBox}>
-            <Text style={styles.binaryLabel}>CÓDIGO BINÁRIO DE EMERGÊNCIA:</Text>
-            <Text style={styles.binaryCode}>{binaryCode || '00000000'}</Text>
-          </View>
-
-          {isLeader ? (
-            <View style={styles.inputArea}>
-              <TextInput
-                style={styles.input}
-                placeholder="Digite o valor decimal (ex: 42)"
-                placeholderTextColor={Colors.textMuted}
-                keyboardType="numeric"
-                maxLength={4}
-                value={answer}
-                onChangeText={setAnswer}
-              />
-              <TouchableOpacity
-                style={[styles.submitBtn, !answer.trim() && styles.submitBtnDisabled]}
-                disabled={!answer.trim()}
-                onPress={handleConfirm}
-              >
-                <Text style={styles.submitBtnText}>⚡ Reiniciar Sistema</Text>
-              </TouchableOpacity>
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollOverlay}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>⚡ ENERGIA ZERADA • ÚLTIMA CHANCE</Text>
             </View>
-          ) : (
-            <View style={styles.waitingBox}>
-              <Text style={styles.waitingText}>
-                Aguardando o Líder enviar a conversão de emergência. Ajudem nos cálculos!
-              </Text>
+
+            <Text style={styles.title}>Desafio de Resgate</Text>
+            <Text style={styles.subtitle}>Reinicialização Binária de Emergência</Text>
+
+            <Text style={styles.description}>
+              A pontuação da equipe chegou a 0! Converta este código de 8 bits para decimal para recuperar{' '}
+              <Text style={styles.highlight}>+150 pontos</Text>. Se errar, a equipe entra em{' '}
+              <Text style={styles.dangerHighlight}>Reserva de Emergência</Text>!
+            </Text>
+
+            <View style={styles.binaryBox}>
+              <Text style={styles.binaryLabel}>CÓDIGO BINÁRIO DE EMERGÊNCIA:</Text>
+              <Text style={styles.binaryCode}>{binaryCode || '00000000'}</Text>
             </View>
-          )}
-        </View>
-      </View>
+
+            {isLeader ? (
+              <View style={styles.inputArea}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Digite o valor decimal (ex: 42)"
+                  placeholderTextColor={Colors.textMuted}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  value={answer}
+                  onChangeText={setAnswer}
+                />
+                <TouchableOpacity
+                  style={[styles.submitBtn, !answer.trim() && styles.submitBtnDisabled]}
+                  disabled={!answer.trim()}
+                  onPress={handleConfirm}
+                >
+                  <Text style={styles.submitBtnText}>⚡ Reiniciar Sistema</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.waitingBox}>
+                <Text style={styles.waitingText}>
+                  Aguardando o Líder enviar a conversão de emergência. Ajudem nos cálculos!
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  keyboardContainer: {
     flex: 1,
     backgroundColor: 'rgba(2, 6, 23, 0.9)',
+  },
+  scrollOverlay: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    paddingBottom: 80,
   },
   modalCard: {
     width: '100%',

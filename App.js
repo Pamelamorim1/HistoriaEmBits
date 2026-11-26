@@ -27,19 +27,6 @@ export default function App() {
 
   const localEngineRef = useRef(null);
 
-  // Descoberta dinâmica do servidor na rede local ao abrir o app
-  useEffect(() => {
-    let mounted = true;
-    socketService.autoDiscoverServer().then((res) => {
-      if (mounted && res?.found && res.url) {
-        setServerUrl(res.url);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   // Inscrever-se nos eventos do Socket.io
   useEffect(() => {
     const unsubRoomCreated = socketService.subscribe('room_created', ({ roomId, player, room }) => {
@@ -51,7 +38,21 @@ export default function App() {
     const unsubRoomJoined = socketService.subscribe('room_joined', ({ roomId, player, room }) => {
       setCurrentUser(player);
       setRoomState(room);
-      setCurrentScreen('lobby');
+      if (room?.status === 'playing') {
+        setCurrentScreen('game');
+      } else {
+        setCurrentScreen('lobby');
+      }
+    });
+
+    const unsubRoomReconnected = socketService.subscribe('room_reconnected', ({ roomId, player, room }) => {
+      setCurrentUser(player);
+      setRoomState(room);
+      if (room?.status === 'playing') {
+        setCurrentScreen('game');
+      } else {
+        setCurrentScreen('lobby');
+      }
     });
 
     const unsubRoomUpdated = socketService.subscribe('room_updated', (room) => {
@@ -161,6 +162,7 @@ export default function App() {
     return () => {
       unsubRoomCreated();
       unsubRoomJoined();
+      unsubRoomReconnected();
       unsubRoomUpdated();
       unsubGameStarted();
       unsubBinarySelected();
@@ -279,6 +281,7 @@ export default function App() {
 
   const handleLeaveRoom = () => {
     if (gameMode === 'wifi') {
+      socketService.leaveRoom(roomState?.id);
       socketService.disconnect();
     }
     setRoomState(null);

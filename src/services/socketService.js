@@ -28,6 +28,36 @@ class SocketService {
     this.socket = null;
     this.serverUrl = getDefaultServerUrl();
     this.listeners = new Map();
+    this.playerId = null;
+    this.currentRoomId = null;
+    this.playerName = null;
+    this.heartbeatTimer = null;
+  }
+
+  getOrCreatePlayerId() {
+    if (!this.playerId) {
+      this.playerId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    }
+    return this.playerId;
+  }
+
+  startHeartbeat() {
+    this.stopHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      if (this.socket && this.socket.connected && this.currentRoomId && this.playerId) {
+        this.socket.emit('player_heartbeat', {
+          roomId: this.currentRoomId,
+          playerId: this.playerId,
+        });
+      }
+    }, 15000);
+  }
+
+  stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
   }
 
   setServerUrl(url) {
@@ -198,13 +228,25 @@ class SocketService {
 
     this.socket = io(this.serverUrl, {
       transports: ['websocket', 'polling'],
-      timeout: 6000,
-      reconnectionAttempts: 3,
+      timeout: 20000,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
 
     this.socket.on('connect', () => {
       console.log('[SocketService] Conectado ao servidor:', this.socket.id);
       this.emitInternal('connection_change', { connected: true, id: this.socket.id });
+      this.startHeartbeat();
+      if (this.currentRoomId && this.playerId) {
+        console.log(`[SocketService] Auto-reconectando à sala ${this.currentRoomId} como ${this.playerName} (${this.playerId})...`);
+        this.socket.emit('reconnect_room', {
+          roomId: this.currentRoomId,
+          playerId: this.playerId,
+          playerName: this.playerName,
+        });
+      }
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -225,6 +267,7 @@ class SocketService {
     const events = [
       'room_created',
       'room_joined',
+      'room_reconnected',
       'room_updated',
       'game_started',
       'binary_selected',
@@ -248,6 +291,15 @@ class SocketService {
 
     events.forEach((evt) => {
       this.socket.on(evt, (data) => {
+        if ((evt === 'room_created' || evt === 'room_joined' || evt === 'room_reconnected') && data) {
+          if (data.roomId) this.currentRoomId = data.roomId;
+          if (data.player?.id) this.playerId = data.player.id;
+          if (data.player?.name) this.playerName = data.player.name;
+        }
+        if (evt === 'room_closed') {
+          this.currentRoomId = null;
+          this.stopHeartbeat();
+        }
         this.emitInternal(evt, data);
       });
     });
@@ -256,24 +308,42 @@ class SocketService {
   }
 
   disconnect() {
+    this.stopHeartbeat();
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
     }
   }
 
+  leaveRoom(roomId = null) {
+    const targetRoomId = roomId || this.currentRoomId;
+    if (this.socket && this.socket.connected && targetRoomId) {
+      this.socket.emit('leave_room', {
+        roomId: targetRoomId,
+        playerId: this.playerId,
+      });
+    }
+    this.currentRoomId = null;
+    this.stopHeartbeat();
+  }
+
   createRoom(playerName) {
+    this.playerName = playerName;
+    const playerId = this.getOrCreatePlayerId();
     if (!this.socket || !this.socket.connected) {
       this.connect();
     }
-    this.socket.emit('create_room', { playerName });
+    this.socket.emit('create_room', { playerName, playerId });
   }
 
   joinRoom(roomId, playerName) {
+    this.playerName = playerName;
+    this.currentRoomId = (roomId || '').trim().toUpperCase();
+    const playerId = this.getOrCreatePlayerId();
     if (!this.socket || !this.socket.connected) {
       this.connect();
     }
-    this.socket.emit('join_room', { roomId, playerName });
+    this.socket.emit('join_room', { roomId: this.currentRoomId, playerName, playerId });
   }
 
   startGame(roomId) {

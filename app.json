@@ -4,11 +4,13 @@
     "slug": "historia-em-bits",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "historiaembits",
     "icon": "./assets/logo.jpg",
     "userInterfaceStyle": "dark",
     "android": {
       "package": "com.historiaembits.app",
       "usesCleartextTraffic": true,
+      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "backgroundColor": "#0F172A",
         "foregroundImage": "./assets/logo.jpg"

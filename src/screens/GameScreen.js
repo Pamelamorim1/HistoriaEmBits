@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -41,6 +41,7 @@ export default function GameScreen({
 }) {
   const [guideVisible, setGuideVisible] = useState(false);
   const [typedYear, setTypedYear] = useState('');
+  const scrollViewRef = useRef(null);
 
   const handlePromptRevealCentralYear = (cardId = null, cardTitle = null) => {
     const label = cardTitle ? `de "${cardTitle}"` : 'desta carta da linha do tempo';
@@ -125,7 +126,8 @@ export default function GameScreen({
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
         style={styles.keyboardContainer}
       >
         {emergencyMode && (
@@ -135,7 +137,13 @@ export default function GameScreen({
             </Text>
           </View>
         )}
-        <ScrollView contentContainerStyle={styles.scrollArea} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollArea}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}
+        >
           {/* FASE 1: DECODIFICAÇÃO BINÁRIA */}
           {phase === 'decoding' && (
             <View style={styles.decodingSection}>
@@ -275,6 +283,11 @@ export default function GameScreen({
                     value={typedYear}
                     onChangeText={setTypedYear}
                     editable={isLeader && !!selectedBinary}
+                    onFocus={() => {
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                      }, 150);
+                    }}
                   />
 
                   {isLeader && (
@@ -426,7 +439,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scrollArea: {
-    paddingBottom: 24,
+    paddingBottom: 150,
   },
   decodingSection: {
     padding: 16,

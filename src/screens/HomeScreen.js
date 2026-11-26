@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ export default function HomeScreen({
   const [tempIp, setTempIp] = useState(serverUrl || '192.168.1.100:3000');
   const [isScanning, setIsScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState('');
+  const scrollViewRef = useRef(null);
 
   useEffect(() => {
     if (serverUrl) {
@@ -45,7 +46,7 @@ export default function HomeScreen({
         await navigator.clipboard.writeText(hostToShare);
         Alert.alert('Host Copiado!', `Endereço copiado:\n${hostToShare}`);
         return;
-      } catch (e) {}
+      } catch (e) { }
     }
     try {
       await Share.share({
@@ -104,18 +105,30 @@ export default function HomeScreen({
   };
 
   const handleSaveIp = () => {
-    onUpdateServerUrl(tempIp.trim());
+    if (!tempIp || !tempIp.trim()) {
+      Alert.alert('Atenção', 'Digite um endereço de IP válido.');
+      return;
+    }
+    const formatted = tempIp.trim();
+    onUpdateServerUrl(formatted);
     setMode('menu');
-    Alert.alert('Servidor Atualizado', `Endereço salvo: ${tempIp.trim()}`);
+    Alert.alert('Servidor Atualizado', `Novo endereço salvo:\n${formatted}`);
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
       style={styles.container}
     >
       <BinaryRain />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
+      >
         {/* Logo and Brand */}
         <View style={styles.brandContainer}>
           <View style={styles.badgeTheme}>
@@ -198,7 +211,7 @@ export default function HomeScreen({
                 onPress={() => setMode('config')}
               >
                 <Text style={styles.serverConfigText}>
-                  Configurar IP do Servidor ({serverUrl})
+                  Configurar IP do Servidor
                 </Text>
               </TouchableOpacity>
             </View>
@@ -220,24 +233,7 @@ export default function HomeScreen({
               </Text>
             </View>
 
-            <View style={styles.serverInfoBox}>
-              <Text style={styles.serverInfoLabel}>Endereço do Servidor de Conexão:</Text>
-              <Text style={styles.serverInfoUrl} selectable>{serverUrl}</Text>
-              <TouchableOpacity onPress={handleCopyOrShareHost}>
-                <Text style={styles.changeIpText}>📋 Copiar / Compartilhar Host com Colegas</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleAutoDiscover} disabled={isScanning}>
-                <Text style={styles.changeIpText}>
-                  {isScanning ? '⏳ Buscando servidor na rede...' : '🔍 Detectar Servidor Automaticamente'}
-                </Text>
-              </TouchableOpacity>
-              {isScanning && scanStatus ? (
-                <Text style={styles.scanStatusText}>{scanStatus}</Text>
-              ) : null}
-              <TouchableOpacity onPress={() => setMode('config')}>
-                <Text style={styles.changeIpText}>[ Alterar IP Manualmente ]</Text>
-              </TouchableOpacity>
-            </View>
+
 
             <TouchableOpacity style={styles.confirmBtn} onPress={handleCreate}>
               <Text style={styles.confirmBtnText}>Gerar Sala e Abrir Lobby</Text>
@@ -282,6 +278,11 @@ export default function HomeScreen({
               onChangeText={setRoomCode}
               autoCapitalize="characters"
               maxLength={10}
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 150);
+              }}
             />
 
             <TouchableOpacity style={styles.confirmBtn} onPress={handleJoin}>
@@ -299,7 +300,7 @@ export default function HomeScreen({
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>Configurar Servidor Local (Wi-Fi)</Text>
             <Text style={styles.formDesc}>
-              Insira o IP do computador ou dispositivo que está rodando o servidor Node.js (ex: 192.168.1.105:3000 ou localhost:3000).
+              O IP do servidor é detectado automaticamente. Se precisar conectar em outro computador ou roteador, adicione o novo endereço abaixo.
             </Text>
 
             <View style={styles.serverInfoBox}>
@@ -307,25 +308,24 @@ export default function HomeScreen({
                 HOST ATUAL (CONFIGURE ESTE ENDEREÇO NAS OUTRAS CONTAS):
               </Text>
               <Text style={styles.serverInfoUrl} selectable>
-                {serverUrl}
+                {'************'}
               </Text>
-              <TouchableOpacity
-                style={[styles.hotspotQuickBtn, { marginTop: 8, marginBottom: 0, width: '100%' }]}
-                onPress={handleCopyOrShareHost}
-              >
-                <Text style={styles.hotspotQuickBtnText}>📋 Copiar / Compartilhar Host</Text>
-              </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>ENDEREÇO DO SERVIDOR (IP:PORTA):</Text>
+            <Text style={styles.inputLabel}>ADICIONAR / ALTERAR ENDEREÇO (IP:PORTA):</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="192.168.1.100:3000"
+              placeholder="Ex: 192.168.1.100:3000"
               placeholderTextColor={Colors.textMuted}
               value={tempIp}
               onChangeText={setTempIp}
               autoCapitalize="none"
               autoCorrect={false}
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 150);
+              }}
             />
 
             <TouchableOpacity
@@ -342,7 +342,7 @@ export default function HomeScreen({
             ) : null}
 
             <TouchableOpacity style={styles.confirmBtn} onPress={handleSaveIp}>
-              <Text style={styles.confirmBtnText}>Salvar Endereço</Text>
+              <Text style={styles.confirmBtnText}>Salvar Novo Endereço</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.cancelBtn} onPress={() => setMode('menu')}>
@@ -363,6 +363,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingTop: 16,
+    paddingBottom: 150,
     backgroundColor: 'transparent',
   },
   brandContainer: {
