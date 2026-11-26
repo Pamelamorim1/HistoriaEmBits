@@ -317,7 +317,6 @@ export default function HomeScreen({
               style={styles.textInput}
               placeholder="Ex: 192.168.1.100:3000"
               placeholderTextColor={Colors.textMuted}
-              value={tempIp}
               onChangeText={setTempIp}
               autoCapitalize="none"
               autoCorrect={false}
@@ -328,7 +327,7 @@ export default function HomeScreen({
               }}
             />
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[styles.hotspotQuickBtn, { marginBottom: 10 }]}
               disabled={isScanning}
               onPress={handleAutoDiscover}
@@ -336,7 +335,7 @@ export default function HomeScreen({
               <Text style={styles.hotspotQuickBtnText}>
                 {isScanning ? '⏳ Buscando servidor na rede...' : '🔍 Detectar IP Automaticamente'}
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             {isScanning && scanStatus ? (
               <Text style={styles.scanStatusText}>{scanStatus}</Text>
             ) : null}

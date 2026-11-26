@@ -258,7 +258,7 @@ class SocketService {
       console.log('[SocketService] Erro de conexão:', error.message);
       this.emitInternal(
         'error_message',
-        `Não foi possível conectar ao servidor em ${this.serverUrl}.\n\n1. Verifique se o servidor está rodando no terminal com "npm run server".\n2. Verifique se o celular está no mesmo Wi-Fi.`
+        `Não foi possível conectar ao servidor.\n\n1. Verifique se o servidor está rodando no terminal com "npm run server".\n2. Verifique se o celular está no mesmo Wi-Fi.`
       );
       this.emitInternal('connection_error', error.message);
     });
