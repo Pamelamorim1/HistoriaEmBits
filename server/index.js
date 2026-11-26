@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
@@ -863,13 +864,13 @@ function sanitizeRoomState(room, forSocketId = null) {
     currentCard:
       room.phase === 'timeline' || room.phase === 'finished'
         ? {
-            id: room.currentCard.id,
-            titulo: room.currentCard.titulo,
-            ano_decimal: room.currentCard.ano_decimal,
-            ano_binario: room.currentCard.ano_binario,
-            resumo_historico: room.currentCard.resumo_historico,
-            imagem_url: room.currentCard.imagem_url,
-          }
+          id: room.currentCard.id,
+          titulo: room.currentCard.titulo,
+          ano_decimal: room.currentCard.ano_decimal,
+          ano_binario: room.currentCard.ano_binario,
+          resumo_historico: room.currentCard.resumo_historico,
+          imagem_url: room.currentCard.imagem_url,
+        }
         : null,
     selectedBinary: room.selectedBinary,
     roundAttempts: room.roundAttempts,

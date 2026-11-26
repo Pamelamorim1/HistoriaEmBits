@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 import Constants from 'expo-constants';
 
-export const HOTSPOT_DEFAULT_URL = 'http://192.168.43.1:3000';
+export const HOTSPOT_DEFAULT_URL = process.env.HOTSPOT_DEFAULT_URL || 'http://192.168.43.1:3000';
 
 export function getDefaultServerUrl() {
   try {
@@ -19,7 +19,7 @@ export function getDefaultServerUrl() {
   } catch (err) {
     console.log('Erro ao detectar hostUri:', err);
   }
-  return 'http://192.168.1.5:3000';
+  return HOTSPOT_DEFAULT_URL;
 }
 
 class SocketService {
