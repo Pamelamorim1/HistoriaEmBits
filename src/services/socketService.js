@@ -1,7 +1,8 @@
 import { io } from 'socket.io-client';
 import Constants from 'expo-constants';
 
-export const HOTSPOT_DEFAULT_URL = process.env.HOTSPOT_DEFAULT_URL || 'http://192.168.43.1:3000';
+export const HOTSPOT_DEFAULT_URL = process.env.HOTSPOT_DEFAULT_URL || 'http://185.225.233.145:3080';
+// 'http://192.168.43.1:3000';
 
 export function getDefaultServerUrl() {
   try {
