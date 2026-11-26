@@ -14,6 +14,9 @@ import {
 } from 'react-native';
 import { Colors } from '../theme/colors';
 import BinaryRain from '../components/BinaryRain';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BINARY_RAIN_KEY = '@historia_em_bits_binary_rain';
 
 export default function HomeScreen({
   onStartLocalGame,
@@ -31,7 +34,46 @@ export default function HomeScreen({
   const [tempIp, setTempIp] = useState(serverUrl || '192.168.1.100:3000');
   const [isScanning, setIsScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState('');
+  const [binaryRainEnabled, setBinaryRainEnabled] = useState(true);
   const scrollViewRef = useRef(null);
+
+  // Carregar preferência salva da chuva binária
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+          const webVal = window.localStorage.getItem(BINARY_RAIN_KEY);
+          if (webVal !== null && isMounted) {
+            setBinaryRainEnabled(webVal === 'true');
+            return;
+          }
+        }
+        const saved = await AsyncStorage.getItem(BINARY_RAIN_KEY);
+        if (saved !== null && isMounted) {
+          setBinaryRainEnabled(saved === 'true');
+        }
+      } catch (err) {
+        console.log('Erro ao carregar preferência da chuva binária:', err);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const toggleBinaryRain = async () => {
+    const nextVal = !binaryRainEnabled;
+    setBinaryRainEnabled(nextVal);
+    try {
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(BINARY_RAIN_KEY, String(nextVal));
+      }
+      await AsyncStorage.setItem(BINARY_RAIN_KEY, String(nextVal));
+    } catch (err) {
+      console.log('Erro ao salvar preferência da chuva binária:', err);
+    }
+  };
 
   useEffect(() => {
     if (serverUrl) {
@@ -121,7 +163,7 @@ export default function HomeScreen({
       keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
       style={styles.container}
     >
-      <BinaryRain />
+      {binaryRainEnabled && <BinaryRain />}
       <ScrollView
         ref={scrollViewRef}
         contentContainerStyle={styles.scrollContent}
@@ -129,6 +171,20 @@ export default function HomeScreen({
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={true}
       >
+        {/* Botão no canto superior direito para alternar chuva binária */}
+        <View style={styles.topControlRow}>
+          <TouchableOpacity
+            style={[styles.rainToggleButton, !binaryRainEnabled && styles.rainToggleButtonOff]}
+            onPress={toggleBinaryRain}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.rainToggleIcon}>{binaryRainEnabled ? '🌧️' : '🚫'}</Text>
+            <Text style={[styles.rainToggleLabel, !binaryRainEnabled && styles.rainToggleLabelOff]}>
+              {binaryRainEnabled ? 'Chuva 01: ON' : 'Chuva 01: OFF'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Logo and Brand */}
         <View style={styles.brandContainer}>
           <View style={styles.badgeTheme}>
@@ -364,6 +420,40 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 150,
     backgroundColor: 'transparent',
+  },
+  topControlRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 6,
+    zIndex: 10,
+  },
+  rainToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    paddingVertical: 5,
+    paddingHorizontal: 11,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#38BDF8',
+    gap: 6,
+  },
+  rainToggleButtonOff: {
+    borderColor: '#475569',
+    backgroundColor: '#0B0F19',
+    opacity: 0.8,
+  },
+  rainToggleIcon: {
+    fontSize: 12,
+  },
+  rainToggleLabel: {
+    color: '#38BDF8',
+    fontSize: 11,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  rainToggleLabelOff: {
+    color: '#94A3B8',
   },
   brandContainer: {
     alignItems: 'center',
