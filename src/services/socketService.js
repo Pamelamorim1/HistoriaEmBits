@@ -1,10 +1,15 @@
 import { io } from 'socket.io-client';
 import Constants from 'expo-constants';
 
-export const HOTSPOT_DEFAULT_URL = process.env.HOTSPOT_DEFAULT_URL || 'http://185.225.233.145:3080';
-// 'http://192.168.43.1:3000';
+export const HOTSPOT_DEFAULT_URL =
+  process.env.EXPO_PUBLIC_SERVER_URL ||
+  process.env.HOTSPOT_DEFAULT_URL ||
+  'https://rover-excellent-import-believed.trycloudflare.com';
 
 export function getDefaultServerUrl() {
+  if (HOTSPOT_DEFAULT_URL) {
+    return HOTSPOT_DEFAULT_URL;
+  }
   try {
     const hostUri =
       Constants.expoConfig?.hostUri ||
@@ -20,7 +25,7 @@ export function getDefaultServerUrl() {
   } catch (err) {
     console.log('Erro ao detectar hostUri:', err);
   }
-  return HOTSPOT_DEFAULT_URL;
+  return 'https://rover-excellent-import-believed.trycloudflare.com';
 }
 
 class SocketService {
