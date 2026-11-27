@@ -2,194 +2,276 @@
 
 > **Componentes Curriculares:** História & Pensamento Computacional (Lógica Binária)  
 > **Público-Alvo:** 1º ano do Ensino Médio (15 a 16 anos)  
-> **Habilidades BNCC:** `EM13CHS103` (Argumentação histórica e cronologia) e `EM13CO13` (Representação digital de dados e sistema binário)  
-> **Tema Base:** Era das Revoluções (Séculos XVIII e XIX)  
+> **Habilidades BNCC:** `EM13CHS103` (Argumentação histórica, causalidade e cronologia) e `EM13CO13` (Representação digital de dados e sistema binário)  
+> **Tema Base:** Era das Revoluções e Formação do Mundo Contemporâneo (Séculos XVIII e XIX)  
 > **Autoras do Design Pedagógico:** Andresa Fernandes, Fernanda Abreu, Pâmela Amorim  
 
 ---
 
 ## 1. Visão Geral do Jogo
 
-O **História em Bits** é um jogo cooperativo pedagógico em que os participantes assumem o papel de uma equipe de investigação histórica e digital. O objetivo central é **reconstruir a Linha do Tempo da Era das Revoluções**, decodificando anos históricos representados na linguagem fundamental dos computadores: o **código binário**.
+O **História em Bits** é um jogo cooperativo e pedagógico no qual os participantes assumem o papel de uma equipe de investigação histórica e digital. O objetivo central é **reconstruir a Linha do Tempo da Era das Revoluções**, decodificando anos históricos expressos na linguagem fundamental da computação: o **código binário de 11 bits**.
 
-Para vencer, a equipe não pode depender de adivinhações individuais: o jogo exige **trabalho em equipe**, **cálculos matemáticos conjuntos** e **debate cronológico fundamentado**.
+A partida parte de uma **Carta Central Inicial de Referência** (*Independência do Brasil, 1822*), cuja data serve de âncora cronológica, e desafia os jogadores a posicionar corretamente as cartas sorteadas do baralho.
+
+Para alcançar a vitória coletiva, a equipe não pode depender de suposições isoladas: o jogo exige **trabalho em equipe**, **conversão matemática rigorosa por potências de 2**, **dupla validação por consenso coletivo** e **argumentação cronológica fundamentada**.
 
 ---
 
-## 2. Modos de Jogo
+## 2. Modos e Formatos de Jogo
 
-### 2.1. Multiplayer em Rede Local (Wi-Fi / Hotspot)
-* **Jogadores por sala:** 2 a 5 participantes.
-* **Capacidade simultânea do servidor:** Até 5 salas ativas (`SALA-01` a `SALA-05`).
-* **Como funciona:** 
-  1. O anfitrião conecta o celular à rede e clica em **Criar Sala Wi-Fi (Host)**, gerando um código (ex.: `SALA-01`).
-  2. Os demais colegas entram na mesma rede Wi-Fi (ou no Roteador/Hotspot móvel do anfitrião), abrem o app, clicam em **Entrar em Sala Wi-Fi** e informam o código gerado.
-  3. Cada jogador acompanha a mesa em seu próprio dispositivo em tempo real sincronizado via Socket.io.
+O aplicativo oferece flexibilidade para se adaptar a diferentes realidades de infraestrutura escolar:
 
-### 2.2. Partida Local (Mesa Única)
-* **Jogadores:** 1 a 5 participantes em um único aparelho compartilhado.
-* **Como funciona:** Ideal quando apenas um celular ou tablet está disponível em sala de aula. O aparelho fica no centro da mesa ou vai sendo passado entre os integrantes a cada rodada.
+### 2.1. Multiplayer em Rede Local (Wi-Fi / Hotspot Celular)
+* **Jogadores por sala:** 2 a 5 participantes conectados simultaneamente.
+* **Capacidade do servidor:** Até 5 salas ativas independentes (`SALA-01` a `SALA-05`).
+* **Conectividade sem dependência de internet externa:**
+  * **Via Roteador da Escola / Laboratório:** Todos conectam no mesmo Wi-Fi local.
+  * **Via Ponto de Acesso / Hotspot Móvel:** Um estudante ou professor ativa o *Roteador Wi-Fi* do próprio celular (sem necessidade de gastar pacote de dados 4G). Os colegas se conectam a esse sinal.
+* **Facilidades de Conexão:**
+  * **Detecção Automática de Servidor:** Na tela de entrada, o botão *🔍 Detectar Servidor na Rede* varre a rede local e localiza automaticamente o servidor do jogo.
+  * **Código Padronizado:** Entradas de código (`SALA-01`, etc.) com conversão automática para maiúsculas e autocorreção desativada.
+* **Dinâmica:** Cada participante interage a partir do seu próprio aparelho com sincronização em tempo real via WebSockets (Socket.io).
+
+### 2.2. Partida Local (Mesa Única / Aparelho Compartilhado)
+Ideal quando há apenas um celular, tablet ou computador disponível para a equipe ou em momentos de estudo individual:
+
+* **👥 Modo Coletivo (Mesa Única / Passa ou Joga):**
+  * Desenvolvido para equipes reunidas em torno de um único aparelho.
+  * Partida completa com **10 cartas** do baralho (+ 1 central).
+  * Inclui etapas formais de **Debate Coletivo e Consenso**, exigindo a concordância verbal de todo o grupo antes de enviar qualquer palpite ou posicionamento.
+* **👤 Modo Individual (Treino Solo Autônomo):**
+  * Voltado para treino individual, lição de casa ou reforço pedagógico.
+  * **Seletor de Quantidade de Cartas:** O estudante pode escolher solucionar **4, 6, 8 ou 10 cartas** (+ 1 central inicial).
+  * Fluxo direto e ágil: suprime modais de votação de consenso e telas de transição de liderança, permitindo raciocínio e cálculo dinâmicos no próprio ritmo do aluno.
 
 ---
 
 ## 3. Papéis na Partida e Liderança Rotativa
 
-Para assegurar que todos os alunos participem ativamente e ninguém monopolize o jogo, a liderança é **rotativa a cada rodada**:
+Para assegurar que todos os alunos participem ativamente e evitar a monopolização das decisões, a liderança é **estritamente rotativa a cada carta concluída na Linha do Tempo**:
 
-| Papel | Quem Exerce | O Que Pode Fazer | O Que Não Pode Fazer |
+| Papel | Quem Exerce | O Que Faz | Limitações e Responsabilidades |
 | :--- | :--- | :--- | :--- |
-| 👑 **Líder da Rodada** | 1 jogador por vez (rotaciona a cada carta posicionada) | • Selecionar o código binário entre as opções<br>• Digitar o ano decimal convertido<br>• Confirmar a verificação do ano<br>• Escolher a decisão crítica no 3º erro<br>• Propor a posição da carta na Linha do Tempo | Não deve jogar sozinho; deve debater verbalmente com a equipe antes de qualquer confirmação. |
-| 👥 **Integrantes da Equipe** | Demais alunos conectados na sala | • Visualizar a carta histórica e os códigos binários<br>• Ver a opção selecionada pelo Líder em tempo real<br>• Consultar a Tabela $2^n$ e realizar cálculos de conversão<br>• Argumentar verbalmente sobre eventos anteriores e posteriores<br>• **Votar no Consenso Coletivo** de posicionamento na Linha do Tempo | Os botões de envio e digitação ficam bloqueados (*modo espectador ativo*). |
+| 👑 **Líder da Rodada** | 1 jogador por vez (alterna a cada carta fixada) | • Selecionar 1 dos 3 códigos binários da carta<br>• Digitar o ano decimal convertido<br>• Propor a verificação do ano para aprovação da equipe<br>• Propor o ponto de inserção na Linha do Tempo<br>• Escolher a Decisão Crítica no 3º erro | Não joga de forma isolada; tem o dever de consultar os colegas antes de submeter qualquer proposta. |
+| 👥 **Integrantes da Equipe** | Demais alunos conectados na sala | • Acompanhar a carta e as opções selecionadas em tempo real<br>• Consultar a Tabela $2^n$ no botão de ajuda<br>• Realizar cálculos no rascunho e sugerir o ano<br>• Argumentar relações de causa e efeito histórico<br>• **Votar no Consenso Coletivo** (aceitar ou recusar propostas) | Os campos de texto e submissão direta ficam bloqueados (*modo espectador ativo*). |
+
+### 🔔 Alerta Visual de Transição de Liderança
+Sempre que uma carta é fixada com sucesso na Linha do Tempo, o sistema dispara um **Modal de Transição de Liderança** em tela cheia para todos os participantes:
+* **Para o novo Líder:** Exibe a insígnia da coroa 👑, alertando que os controles da rodada passaram para ele e instruindo-o a dialogar com os colegas.
+* **Para os demais membros:** Informa quem é o colega que assumiu a liderança 👥 e reforça a missão do grupo: abrir o Guia $2^n$, realizar os cálculos e orientar o líder verbalmente.
 
 ---
 
-## 4. O Sistema de Pontuação e Economia da Equipe
+## 4. O Sistema de Duplo Consenso Coletivo (100% de Aprovação)
 
-A equipe inicia a partida com uma pontuação coletiva de **1000 pontos**. Os pontos representam a energia e a precisão do sistema.
+O jogo reforça a cooperação por meio de **duas etapas obrigatórias de Consenso da Equipe** em cada rodada multiplayer:
 
-### 4.1. Pontuação de Decodificação Binária
-Ao acertar o código binário e o ano decimal correspondente:
+```
+[ Líder seleciona código e digita ano ]
+                   │
+                   ▼
+  🤝 CONSENSO 1: Verificação de Ano
+  "Todos concordam que o código binário e o ano decimal estão corretos?"
+                   │
+      ┌────────────┴────────────┐
+      ▼                         ▼
+  ❌ Alguém Recusa         ✅ 100% Aceitam
+  (Cancela proposta e      (Sistema valida
+   retoma o debate)         código e cálculo)
+                                │
+                                ▼
+               [ Ano Correto! Avança p/ Linha do Tempo ]
+                                │
+                                ▼
+               [ Líder propõe ponto de inserção ]
+                                │
+                                ▼
+                 🤝 CONSENSO 2: Linha do Tempo
+                 "Todos concordam que esta carta pertence a este ponto?"
+                                │
+                   ┌────────────┴────────────┐
+                   ▼                         ▼
+               ❌ Alguém Recusa         ✅ 100% Aceitam
+               (Cancela proposta e      (Sistema valida a
+                retoma o debate)         ordem cronológica)
+```
+
+1. **Consenso 1 — Na Decodificação Binária:** Quando o Líder clica em *Verificar Ano*, o sistema não envia o palpite imediatamente. Abre-se um painel de votação exibindo o código binário escolhido e o ano decimal digitado. A verificação só ocorre se todos os participantes votarem `✅ Concordar`. Se alguém clicar em `❌ Discordar`, a submissão é cancelada para que a equipe revise os cálculos.
+2. **Consenso 2 — Na Linha do Tempo:** Ao sugerir onde a carta deve entrar na cronologia, abre-se uma nova votação de consenso. Apenas com 100% de aprovação a carta é testada na posição proposta.
+
+*(Nota: Em partidas individuais ou com apenas 1 jogador conectado, a validação ocorre diretamente, sem necessidade de tela de votação).*
+
+---
+
+## 5. Pontuação, Economia Coletiva e Penalidades
+
+A equipe inicia a partida com um saldo de **1000 pontos**. Os pontos medem a precisão histórica e o equilíbrio operacional do grupo.
+
+### 5.1. Bônus de Decodificação Binária
+Ao acertar conjuntamente o código binário e a conversão decimal:
 * **Acerto na 1ª tentativa:** `+100 pontos` (Bônus máximo de precisão).
 * **Acerto na 2ª tentativa:** `+50 pontos`.
 * **Acerto na 3ª tentativa ou mais:** `+25 pontos`.
 
-### 4.2. Penalidades por Erros de Decodificação
-* **1º Erro:** `-50 pontos` $\rightarrow$ Libera a **Dica 1** (*Contexto Histórico / Século*).
-* **2º Erro:** `-50 pontos` $\rightarrow$ Libera a **Dica 2** (*Pista Matemática / Eliminação de distrator*).
+### 5.2. Penalidades e Pistas na Decodificação
+Erros no código ou no cálculo decimal geram penalidades e liberam pistas progressivas:
+* **1º Erro:** `-50 pontos` $\rightarrow$ Libera a **Dica 1** (*Contexto Histórico / Século / Relação temporal*).
+* **2º Erro:** `-50 pontos` $\rightarrow$ Libera a **Dica 2** (*Pista Matemática / Eliminação de distrator binário explícito*).
 * **3º Erro:** `-50 pontos` $\rightarrow$ Libera a **Dica 3** (*Pista Específica Final*) e abre a **Decisão Crítica da Equipe**.
-* **Erros adicionais (após a 3ª tentativa):** `-25 pontos` cada.
+* **Erros subsequentes (após a 3ª tentativa):** `-25 pontos` cada.
 
-### 4.3. Penalidades na Linha do Tempo
-* **1º Erro de posição:** `-25 pontos` $\rightarrow$ Libera pista de direção (*"Mova mais para a direita ou esquerda"*).
-* **2º Erro de posição:** `-50 pontos` $\rightarrow$ Libera pista de intervalo (*"Fica entre Evento A e Evento B"*).
+### 5.3. Penalidades e Pistas na Linha do Tempo
+Erros de ordenação cronológica:
+* **1º Erro de posição:** `-25 pontos` $\rightarrow$ Libera pista de direção (*"Mova mais para a esquerda/passado ou direita/futuro"*).
+* **2º Erro de posição:** `-50 pontos` $\rightarrow$ Libera pista de intervalo (*"Aconteceu entre o Evento X e o Evento Y"*).
 * **3º Erro de posição:** `-50 pontos` $\rightarrow$ Abre a **Decisão Crítica da Linha do Tempo**.
-* **Erros adicionais na linha:** `-25 pontos` cada.
+* **Erros subsequentes na linha:** `-25 pontos` cada.
 
-### 4.4. Recursos Estratégicos Pagos
-* **Revelar Ano Oculto da Linha do Tempo:** Custa `50 pontos`. *(Revela o ano decimal de uma carta já fixada na linha para ajudar a balizar novos eventos).*
-* **Revelação Assistida (Decodificação):** Custa `150 pontos`. *(Disponível a partir do 3º erro de decodificação; revela o ano correto e avança obrigatoriamente para a linha do tempo).*
-* **Posicionamento Assistido (Linha do Tempo):** Custa `150 pontos`. *(Disponível a partir do 3º erro de posicionamento; insere a carta na posição cronológica correta).*
+### 5.4. Decisões Críticas (3º Erro) e Recursos Pagos
+Ao atingir o 3º erro em qualquer fase, a equipe é colocada diante de uma escolha estratégica:
+1. **Continuar Tentando:** Gratuito. A equipe mantém o controle da resolução usando todas as dicas desbloqueadas. Novos erros passam a custar apenas `-25 pontos`.
+2. **Revelação Assistida (Decodificação):** Custa `150 pontos`. Revela o ano correto e avança a carta para a Linha do Tempo.
+3. **Posicionamento Assistido (Linha do Tempo):** Custa `150 pontos`. Encaixa a carta na posição cronológica correta automaticamente.
+4. **Revelar Ano Oculto da Linha do Tempo:** Custa `50 pontos`. Revela o ano decimal de qualquer carta já fixada na linha para servir de marco cronológico de apoio.
 
 ---
 
-## 5. Fluxo Passo a Passo de uma Rodada
+## 6. Fluxo Completo de uma Rodada
 
 ```mermaid
 flowchart TD
-    A["Início da Rodada (Novo Líder)"] --> B["Fase 1: Decodificação Binária"]
-    B --> C{"Líder isola 1 código e digita ano decimal"}
-    C -- "Acertou Código + Ano" --> D["Fase 2: Posicionamento na Linha do Tempo"]
-    C -- "Errou Código ou Ano" --> E["Desconta Pontos + Revela Dica"]
-    E --> F{"Já foram 3 erros?"}
-    F -- "Não" --> B
-    F -- "Sim" --> G["Decisão Crítica: Continuar ou Revelação Assistida (-150 pts)"]
-    G -- "Continuar" --> B
-    G -- "Revelação Assistida" --> D
-    D --> H["Líder propõe posição na Linha"]
-    H --> I{"Votação de Consenso Coletivo (Todos concordam?)"}
-    I -- "Alguém discordou" --> D
-    I -- "Todos aceitaram" --> J{"Posição cronológica correta?"}
-    J -- "Não" --> K["Penalidade + Dica Cronológica"]
-    K --> D
-    J -- "Sim" --> L["Carta Fixada na Linha do Tempo!"]
-    L --> M{"Restam cartas no baralho?"}
-    M -- "Sim" --> N["Rotaciona Liderança para o próximo jogador"]
-    N --> A
-    M -- "Não" --> O["Fim de Partida: Vitória Cooperativa & Relatório"]
+    A["Início da Rodada (Novo Líder Sorteado)"] --> B["Fase 1: Decodificação Binária"]
+    B --> C["Líder seleciona 1 binário e digita ano decimal"]
+    C --> D{"Consenso 1: Equipe aprova código e ano?"}
+    D -- "Alguém Discordou" --> B
+    D -- "100% Concordaram" --> E{"Código e Ano Corretos?"}
+    E -- "Incorreto" --> F["Penalidade de Pontos + Libera Pista"]
+    F --> G{"Completou 3 erros?"}
+    G -- "Não" --> B
+    G -- "Sim" --> H["Decisão Crítica: Continuar ou Revelação Assistida (-150 pts)"]
+    H -- "Continuar" --> B
+    H -- "Revelação Assistida" --> I["Fase 2: Posicionamento na Linha"]
+    E -- "Correto (+Pts)" --> I
+    I --> J["Líder propõe posição [ + Inserir Aqui ]"]
+    J --> K{"Consenso 2: Equipe aprova posição na Linha?"}
+    K -- "Alguém Discordou" --> I
+    K -- "100% Concordaram" --> L{"Posição Cronológica Correta?"}
+    L -- "Incorreto" --> M["Penalidade + Pista Cronológica"]
+    M --> I
+    L -- "Correto!" --> N["Carta Fixada na Linha do Tempo!"]
+    N --> O{"Restam cartas no baralho?"}
+    O -- "Sim" --> P["Modal de Transição de Liderança (Novo Líder)"]
+    P --> A
+    O -- "Não" --> Q["Fim de Partida: Vitória Cooperativa & Relatório BNCC"]
 ```
-
-### Fase 1: Decodificação Binária
-1. Uma carta histórica com imagem ilustrativa e resumo é sorteada (ex.: *Queda da Bastilha*). O ano não é mostrado.
-2. São exibidas **3 opções de códigos binários de 11 bits** (1 código correto + 2 distratores históricos plausíveis).
-3. O Líder conversa com a equipe, toca na opção considerada correta e ela fica isolada na tela de todos.
-4. O grupo utiliza o método de potências de 2 para converter o binário para decimal.
-5. O Líder digita o ano no campo numérico e clica em **Verificar Ano**.
-
-### Fase 2: Posicionamento na Linha do Tempo
-1. Com o ano decodificado com sucesso, a carta agora exibe seu ano decimal e binário.
-2. Na Linha do Tempo, todas as cartas já posicionadas voltam a ter seus anos ocultos para estimular a memória de causa e efeito histórica (embora o grupo possa pagar 50 pontos para revelar caso sinta necessidade).
-3. O Líder seleciona o ponto exato de inserção (`[ + Inserir Aqui ]`) onde o evento se encaixa cronologicamente.
-
-### Fase 3: Consenso Coletivo Obrigatório
-1. Ao propor a posição, abre-se uma tela de **Consenso da Equipe** para todos os integrantes.
-2. Cada participante conectado deve votar:
-   * **✅ Concordar:** Se aprova a posição escolhida.
-   * **❌ Discordar:** Se acredita que o evento ocorreu antes ou depois.
-3. Se algum integrante discordar, a proposta é cancelada para que a equipe debata verbalmente.
-4. Apenas quando **100% dos integrantes aceitarem**, o sistema avalia a posição cronológica.
 
 ---
 
-## 6. O Desafio de Resgate e a Reserva de Emergência
+## 7. Desafio de Resgate e Reserva de Emergência
 
-O jogo possui uma mecânica de tensão máxima para salvar a partida caso os pontos da equipe cheguem a zero:
+Se o saldo da equipe atingir **0 pontos**, o sistema entra em estado de pane e dispara o **Desafio de Resgate (Reinicialização Binária)**:
 
 ```
-Pontuação chega a 0
-       │
-       ▼
-[ Desafio de Resgate Ativado ]
-Código de 8 bits gerado aleatoriamente (ex: 00101010)
-       │
-       ├─────────────────────────────────────────┐
-       ▼                                         ▼
-[ ACERTO DO CÓDIGO ]                      [ FALHA NO CÓDIGO ]
-Recupera +150 pontos!                     Entra em Reserva de Emergência:
-A equipe volta ao jogo normal.            • Pontuação travada em 0
-                                          • Recursos pagos bloqueados
-                                          • O PRÓXIMO ERRO ENCERRA A PARTIDA!
+                  Pontuação Coletiva atinge 0
+                             │
+                             ▼
+               [ Desafio de Resgate Ativado ]
+           Código de 8 bits gerado (ex: 01011010)
+                             │
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+   [ ACERTO DO CÓDIGO ]             [ FALHA NO CÓDIGO ]
+  Recupera +150 pontos!             Entra em Reserva de Emergência:
+  A equipe volta ao jogo             • Pontuação congelada em 0
+  com economia recuperada.           • Recursos pagos bloqueados
+                                     • O PRÓXIMO ERRO ENCERRA A PARTIDA (Game Over)!
 ```
 
-* Se a equipe estiver em **Reserva de Emergência** e cometer mais um erro em qualquer etapa, a partida termina imediatamente em **Game Over**.
+* Se a equipe estiver na **Reserva de Emergência** e cometer qualquer erro (na decodificação ou na cronologia), ocorre **Game Over imediato**.
 
 ---
 
-## 7. Como Funciona a Conversão Binária (Tabela $2^n$)
+## 8. Lógica da Conversão Binária (Tabela $2^n$)
 
-O sistema utiliza números binários de 11 bits para representar anos da história contemporânea e moderna (capazes de representar valores decimais de 0 até 2047).
+O jogo utiliza números binários de **11 bits** para os anos históricos (valores decimais de 0 a 2047) e de **8 bits** no Desafio de Resgate (0 a 255).
 
-### Tabela de Valores Posicionais:
-| Potência | $2^{10}$ | $2^9$ | $2^8$ | $2^7$ | $2^6$ | $2^5$ | $2^4$ | $2^3$ | $2^2$ | $2^1$ | $2^0$ |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+### Tabela de Potências de Base 2 (11 Bits):
+| Bit | $b_{10}$ | $b_9$ | $b_8$ | $b_7$ | $b_6$ | $b_5$ | $b_4$ | $b_3$ | $b_2$ | $b_1$ | $b_0$ |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Potência** | $2^{10}$ | $2^9$ | $2^8$ | $2^7$ | $2^6$ | $2^5$ | $2^4$ | $2^3$ | $2^2$ | $2^1$ | $2^0$ |
 | **Valor Decimal** | **1024** | **512** | **256** | **128** | **64** | **32** | **16** | **8** | **4** | **2** | **1** |
 
-### Regra de Conversão:
-Para converter qualquer ano, **soma-se apenas o valor decimal correspondente às posições onde o bit é `1`**. Bits `0` são ignorados.
+### Regra Algorítmica de Conversão:
+Para converter o código binário para o ano decimal, **soma-se o valor decimal correspondente apenas às colunas cujo bit seja igual a `1`**. Colunas com bit `0` não entram na soma.
 
-#### Exemplo Prático — Ano de 1789 (Queda da Bastilha):
-* **Código Binário:** `11011111101`
-* **Cálculo da Soma:**
-  $$\begin{aligned}
-  1789 &= 1024 + 512 + 0 + 128 + 64 + 32 + 16 + 8 + 4 + 0 + 1 \\
-  &= 1789
-  \end{aligned}$$
+$$\text{Ano Decimal} = \sum_{i=0}^{n-1} b_i \cdot 2^i$$
 
-> **Dica Pedagógica:** Durante toda a partida, qualquer jogador pode tocar no botão **Guia $2^n$** no topo da tela para abrir o guia de potências sem penalidade de pontos.
+#### Exemplo 1 — Queda da Bastilha (Ano 1789):
+* **Binário:** `11011111101`
+* **Decomposição:**
+  $$1024 + 512 + 0 + 128 + 64 + 32 + 16 + 8 + 4 + 0 + 1 = 1789$$
 
----
+#### Exemplo 2 — Independência do Brasil (Ano 1822):
+* **Binário:** `11100011110`
+* **Decomposição:**
+  $$1024 + 512 + 256 + 0 + 0 + 0 + 16 + 8 + 4 + 2 + 0 = 1822$$
 
-## 8. Área do Professor e Avaliação Pedagógica
-
-Ao término da partida ou através do botão com cadeado na tela inicial, o docente pode acessar o painel protegido pela senha `PROF2026`.
-
-### Métricas e Evidências BNCC Geradas Automaticamente:
-1. **EM13CHS103 (Argumentação Histórica e Cronologia):**
-   * Percentual de precisão cronológica da equipe.
-   * Total de erros de ordenação temporal.
-2. **EM13CO13 (Representação de Dados e Lógica Binária):**
-   * Percentual de acertos de decodificação na primeira tentativa.
-   * Quantidade de dicas solicitadas ao longo da aula.
-3. **Log Algorítmico Detalhado:**
-   * Registro individual de qual aluno liderou cada rodada.
-   * Histórico completo de palpites, penalidades e decisões tomadas.
-   * Duração total da partida em minutos.
+> **Recurso em Partida:** Qualquer participante pode tocar a qualquer momento no botão **Guia $2^n$** no topo da tela para abrir a tabela interativa sem perder pontos.
 
 ---
 
-## 9. Resumo Rápido para os Estudantes
+## 9. Catálogo de Cartas do Baralho Histórico
 
-1. **Olhem a imagem e o título da carta:** Debatam sobre qual século e período o evento pertence.
-2. **Consultem a Tabela $2^n$:** Façam as contas da soma dos bits em conjunto no rascunho ou mentalmente.
-3. **O Líder da vez digita o ano:** Apenas o Líder submete a resposta, mas sob orientação do grupo.
-4. **Votem no Consenso:** Ao escolher a posição na Linha do Tempo, todos devem aceitar no celular antes da validação.
-5. **Cuidem dos pontos da equipe:** Erros custam caro! Se os pontos zerarem, vocês terão apenas uma chance no Desafio de Resgate!
+O baralho é composto por **1 Carta Central Inicial Fixa** e **10 Cartas de Eventos** fundamentais dos séculos XVIII e XIX:
+
+| ID | Evento Histórico | Ano Decimal | Código Binário (11 bits) | Papel no Jogo |
+| :---: | :--- | :---: | :---: | :--- |
+| `card_00` | **Independência do Brasil** | 1822 | `11100011110` | **Carta Central Inicial** (Âncora cronológica fixa) |
+| `card_01` | **Queda da Bastilha (Revolução Francesa)** | 1789 | `11011111101` | Carta do Baralho |
+| `card_02` | **Declaração de Independência dos EUA** | 1776 | `11011110000` | Carta do Baralho |
+| `card_03` | **Máquina a Vapor de James Watt** | 1769 | `11011101001` | Carta do Baralho |
+| `card_04` | **Início da Revolução Haitiana** | 1791 | `11011111111` | Carta do Baralho |
+| `card_05` | **Chegada da Família Real ao Brasil** | 1808 | `11100010000` | Carta do Baralho |
+| `card_06` | **Congresso de Viena** | 1814 | `11100010110` | Carta do Baralho |
+| `card_07` | **Batalha de Waterloo (Derrota de Napoleão)** | 1815 | `11100010111` | Carta do Baralho |
+| `card_08` | **Confederação do Equador** | 1824 | `11100100000` | Carta do Baralho |
+| `card_09` | **Publicação do Manifesto Comunista** | 1848 | `11100111000` | Carta do Baralho |
+| `card_10` | **Proclamação da República no Brasil** | 1889 | `11101100001` | Carta do Baralho |
+
+---
+
+## 10. Área do Professor e Avaliação Pedagógica (BNCC)
+
+O acesso ao Painel Docente é realizado através do botão de cadeado na tela inicial utilizando a senha mestre `PROF2026`.
+
+### 10.1. Evidências de Aprendizagem Mapeadas:
+1. **Habilidade `EM13CHS103` (Cronologia e Relações de Causa e Efeito):**
+   * Taxa percentual de acerto cronológico na Linha do Tempo.
+   * Total de erros de ordenação temporal e necessidade de pistas cronológicas.
+   * Identificação de marcos históricos anteriores e posteriores.
+2. **Habilidade `EM13CO13` (Pensamento Computacional e Lógica Binária):**
+   * Percentual de decodificação correta na primeira tentativa.
+   * Quantidade de dicas matemáticas solicitadas.
+   * Desempenho no cálculo sob pressão no Desafio de Resgate de 8 bits.
+3. **Competências Socioemocionais e Trabalho em Equipe:**
+   * Índice de consenso (propostas rejeitadas que geraram novo debate produtivo).
+   * Rotação e engajamento equilibrado de liderança entre os participantes.
+
+### 10.2. Gestão Docente em Tempo Real:
+* Monitoramento de todas as salas ativas (`SALA-01` a `SALA-05`), pontuação e rodada atual.
+* Opção de reiniciar ou resetar salas remotamente.
+* Tolerância de rede de **120 segundos** para quedas momentâneas de sinal Wi-Fi sem perda do progresso dos estudantes.
+
+---
+
+## 11. Guia Rápido dos Estudantes (Passo a Passo)
+
+1. **Analise a Carta:** Observe o título, a imagem de época e o resumo histórico.
+2. **Debata com a Equipe:** Identifiquem juntos em que década ou século aquele evento ocorreu.
+3. **Abra o Guia $2^n$:** Calculem a soma dos valores onde os bits são `1`.
+4. **Submissão com Consenso 1:** O Líder escolhe a opção, digita o ano e solicita a aprovação de todos na tela.
+5. **Posicione na Linha do Tempo:** Encaixem o evento no ponto cronológico adequado em relação às cartas anteriores.
+6. **Consenso 2:** Todos devem votar `✅ Concordar` no aparelho para confirmar o posicionamento.
+7. **Monitore a Pontuação:** Cuidado com os erros consecutivos para não ativar o Desafio de Resgate!
+8. **Passe a Liderança:** A cada carta fixada, um novo líder assume o comando da rodada!

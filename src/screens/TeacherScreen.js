@@ -70,6 +70,7 @@ export default function TeacherScreen({ onClose, localReports = [] }) {
     );
   };
 
+  // TELA DE LOGIN DOCENTE
   if (!isAuthenticated) {
     return (
       <KeyboardAvoidingView
@@ -84,28 +85,47 @@ export default function TeacherScreen({ onClose, localReports = [] }) {
           automaticallyAdjustKeyboardInsets={true}
         >
           <View style={styles.loginCard}>
-            <Text style={styles.loginIcon}>🔒</Text>
+            <View style={styles.loginIconContainer}>
+              <Text style={styles.loginIcon}>🔒</Text>
+            </View>
+
+            <View style={styles.loginBadge}>
+              <Text style={styles.loginBadgeText}>PAINEL DOCENTE • BNCC</Text>
+            </View>
+
             <Text style={styles.loginTitle}>Área do Professor</Text>
             <Text style={styles.loginSubtitle}>
-              Acesso restrito ao relatório pedagógico e controle de turmas (BNCC EM13CHS103 e EM13CO13).
+              Acesso exclusivo para acompanhamento pedagógico, relatórios de habilidades (EM13CHS103 / EM13CO13) e gestão de salas ativas.
             </Text>
 
-            <Text style={styles.fieldLabel}>SENHA DOCENTE:</Text>
-            <TextInput
-              style={styles.passwordInput}
-              secureTextEntry={true}
-              placeholder="Digite a senha (padrão: PROF2026)"
-              placeholderTextColor={Colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
-            />
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>SENHA DE ACESSO DOCENTE:</Text>
+              <TextInput
+                style={styles.passwordInput}
+                secureTextEntry={true}
+                placeholder="Digite a senha (padrão: PROF2026)"
+                placeholderTextColor={Colors.textMuted}
+                value={password}
+                onChangeText={setPassword}
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
+            </View>
 
-            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-              <Text style={styles.loginBtnText}>Entrar no Painel</Text>
+            <TouchableOpacity
+              style={styles.quickFillBtn}
+              onPress={() => setPassword('PROF2026')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.quickFillText}>💡 Usar senha padrão: PROF2026</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.backBtn} onPress={onClose}>
-              <Text style={styles.backBtnText}>Voltar ao Início</Text>
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} activeOpacity={0.8}>
+              <Text style={styles.loginBtnText}>Entrar no Painel Pedagógico</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.backBtn} onPress={onClose} activeOpacity={0.7}>
+              <Text style={styles.backBtnText}>← Voltar ao Início</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -113,28 +133,44 @@ export default function TeacherScreen({ onClose, localReports = [] }) {
     );
   }
 
+  // TELA PRINCIPAL AUTENTICADA
   return (
     <View style={styles.container}>
-      {/* Top Header */}
+      {/* Top Header Seguro e Responsivo */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Painel Pedagógico do Professor</Text>
-          <Text style={styles.headerSubtitle}>Monitoramento de Aprendizagem e Gestão de Salas</Text>
+        <View style={styles.headerTextCol}>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>DOCENTE • BNCC</Text>
+          </View>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Painel Pedagógico
+          </Text>
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            Monitoramento de Aprendizagem & Gestão
+          </Text>
         </View>
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-          <Text style={styles.closeBtnText}>Fechar</Text>
+
+        <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
+          <Text style={styles.closeBtnText}>✕ Sair</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Tabs */}
+      {/* Tabs com Badges */}
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'reports' && styles.tabItemActive]}
           onPress={() => setActiveTab('reports')}
+          activeOpacity={0.7}
         >
+          <Text style={styles.tabIcon}>📊</Text>
           <Text style={[styles.tabText, activeTab === 'reports' && styles.tabTextActive]}>
-            Relatórios Concluídos ({allReports.length})
+            Relatórios
           </Text>
+          <View style={[styles.tabBadge, activeTab === 'reports' && styles.tabBadgeActive]}>
+            <Text style={[styles.tabBadgeText, activeTab === 'reports' && styles.tabBadgeTextActive]}>
+              {allReports.length}
+            </Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -143,81 +179,191 @@ export default function TeacherScreen({ onClose, localReports = [] }) {
             setActiveTab('rooms');
             socketService.getAdminReports(password);
           }}
+          activeOpacity={0.7}
         >
+          <Text style={styles.tabIcon}>📡</Text>
           <Text style={[styles.tabText, activeTab === 'rooms' && styles.tabTextActive]}>
-            Gerenciador de Salas ({activeRooms.length}/5)
+            Salas Wi-Fi
           </Text>
+          <View style={[styles.tabBadge, activeTab === 'rooms' && styles.tabBadgeActive]}>
+            <Text style={[styles.tabBadgeText, activeTab === 'rooms' && styles.tabBadgeTextActive]}>
+              {activeRooms.length}/5
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* TAB 1: RELATÓRIOS DOCENTES */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ========================================================= */}
+        {/* ABA 1: RELATÓRIOS PEDAGÓGICOS                            */}
+        {/* ========================================================= */}
         {activeTab === 'reports' && (
           <View>
             {selectedReport ? (
+              /* DETALHES DE UM RELATÓRIO ESPECÍFICO */
               <View style={styles.reportDetailCard}>
                 <TouchableOpacity
                   style={styles.backToListBtn}
                   onPress={() => setSelectedReport(null)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.backToListText}>← Voltar à lista de turmas</Text>
+                  <Text style={styles.backToListText}>← Voltar à Lista de Partidas</Text>
                 </TouchableOpacity>
 
-                <View style={styles.reportMetaHeader}>
-                  <Text style={styles.detailRoomTitle}>{selectedReport.roomId}</Text>
-                  <Text style={styles.detailDateText}>{selectedReport.dataHora}</Text>
+                <View style={styles.detailTitleRow}>
+                  <View>
+                    <Text style={styles.detailRoomTitle}>{selectedReport.roomId || 'SALA'}</Text>
+                    <Text style={styles.detailDateText}>📅 {selectedReport.dataHora || 'Data não registrada'}</Text>
+                  </View>
+                  <View style={styles.detailScorePill}>
+                    <Text style={styles.detailScoreText}>{selectedReport.pontuacaoFinal ?? 0} pts</Text>
+                  </View>
                 </View>
 
-                <Text style={styles.sectionSubtitle}>
-                  Duração: {selectedReport.duracaoMinutos} min • Pontuação: {selectedReport.pontuacaoFinal} pts
-                </Text>
+                {/* Métricas Resumidas em Cards */}
+                <View style={styles.metaCardsRow}>
+                  <View style={styles.metaCard}>
+                    <Text style={styles.metaCardIcon}>⏱️</Text>
+                    <Text style={styles.metaCardLabel}>DURAÇÃO</Text>
+                    <Text style={styles.metaCardValue}>{selectedReport.duracaoMinutos || 1} min</Text>
+                  </View>
+                  <View style={styles.metaCard}>
+                    <Text style={styles.metaCardIcon}>🏆</Text>
+                    <Text style={styles.metaCardLabel}>PONTOS</Text>
+                    <Text style={styles.metaCardValue}>{selectedReport.pontuacaoFinal ?? 0}</Text>
+                  </View>
+                  <View style={styles.metaCard}>
+                    <Text style={styles.metaCardIcon}>👥</Text>
+                    <Text style={styles.metaCardLabel}>INTEGRANTES</Text>
+                    <Text style={styles.metaCardValue}>{selectedReport.participantes?.length || 1}</Text>
+                  </View>
+                </View>
 
-                <Text style={styles.sectionSubtitle}>
-                  Integrantes: {selectedReport.participantes?.join(', ')}
-                </Text>
-
-                {/* Avaliação BNCC */}
-                <View style={styles.bnccDiagnosisBox}>
-                  <Text style={styles.bnccDiagnosisTitle}>Diagnóstico Pedagógico BNCC:</Text>
-                  <Text style={styles.bnccItem}>
-                    • <Text style={styles.boldText}>EM13CHS103 (Cronologia):</Text> Precisão de{' '}
-                    {selectedReport.habilidadesBNCC?.EM13CHS103?.precisaoCronologica} com{' '}
-                    {selectedReport.habilidadesBNCC?.EM13CHS103?.errosOrdenacao} erros de posicionamento.
-                  </Text>
-                  <Text style={styles.bnccItem}>
-                    • <Text style={styles.boldText}>EM13CO13 (Lógica Binária):</Text> Precisão de{' '}
-                    {selectedReport.habilidadesBNCC?.EM13CO13?.precisaoDecodificacao} com{' '}
-                    {selectedReport.habilidadesBNCC?.EM13CO13?.dicasUtilizadas} dicas ou revelações solicitadas.
+                {/* Lista de Alunos Participantes */}
+                <View style={styles.participantsSection}>
+                  <Text style={styles.sectionSmallLabel}>ALUNOS PARTICIPANTES:</Text>
+                  <Text style={styles.participantsText}>
+                    {selectedReport.participantes && selectedReport.participantes.length > 0
+                      ? selectedReport.participantes.join(' • ')
+                      : 'Nenhum jogador listado'}
                   </Text>
                 </View>
 
-                {/* Log detalhado rodada a rodada */}
-                <Text style={styles.sectionHeading}>Registro Algorítmico Rodada a Rodada:</Text>
-                <View style={styles.logList}>
-                  {selectedReport.logDetalhadoRodadas?.map((log, index) => (
-                    <View key={index} style={styles.logItem}>
-                      <Text style={styles.logLeader}>Líder: {log.leader}</Text>
-                      <Text style={styles.logDetail}>
-                        {log.cardTitle ? `Carta: ${log.cardTitle}` : ''}
-                      </Text>
-                      <Text style={styles.logDetail}>
-                        {log.success !== undefined
-                          ? log.success
-                            ? `✓ Acertou na tentativa ${log.attempt} (Binário: ${log.selectedBinary}, Ano: ${log.guessedYear})`
-                            : `✕ Erro na tentativa ${log.attempt}: digitou ${log.guessedYear} (-${log.penalty} pts)`
-                          : log.action}
+                {/* Bloco BNCC 1: EM13CHS103 (História e Cronologia) */}
+                <View style={styles.bnccCardHistorical}>
+                  <View style={styles.bnccCardHeader}>
+                    <Text style={styles.bnccCodeBadge}>BNCC EM13CHS103</Text>
+                    <Text style={styles.bnccCompetenceTitle}>Cronologia & Contexto Histórico</Text>
+                  </View>
+                  <View style={styles.bnccStatRow}>
+                    <View style={styles.bnccStatItem}>
+                      <Text style={styles.bnccStatLabel}>Precisão na Linha do Tempo:</Text>
+                      <Text style={styles.bnccStatValueHighlight}>
+                        {selectedReport.habilidadesBNCC?.EM13CHS103?.precisaoCronologica || '100%'}
                       </Text>
                     </View>
-                  ))}
+                    <View style={styles.bnccStatItem}>
+                      <Text style={styles.bnccStatLabel}>Erros de Ordenação:</Text>
+                      <Text style={styles.bnccStatValue}>
+                        {selectedReport.habilidadesBNCC?.EM13CHS103?.errosOrdenacao ?? 0}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.bnccNote}>
+                    Mede a capacidade de correlacionar eventos da Era das Revoluções em ordem cronológica de causa e efeito.
+                  </Text>
                 </View>
+
+                {/* Bloco BNCC 2: EM13CO13 (Pensamento Computacional) */}
+                <View style={styles.bnccCardComputational}>
+                  <View style={styles.bnccCardHeader}>
+                    <Text style={styles.bnccCodeBadgeComp}>BNCC EM13CO13</Text>
+                    <Text style={styles.bnccCompetenceTitleComp}>Lógica Binária & Dados</Text>
+                  </View>
+                  <View style={styles.bnccStatRow}>
+                    <View style={styles.bnccStatItem}>
+                      <Text style={styles.bnccStatLabel}>Precisão Decodificação:</Text>
+                      <Text style={styles.bnccStatValueHighlightComp}>
+                        {selectedReport.habilidadesBNCC?.EM13CO13?.precisaoDecodificacao || '100%'}
+                      </Text>
+                    </View>
+                    <View style={styles.bnccStatItem}>
+                      <Text style={styles.bnccStatLabel}>Dicas Solicitadas:</Text>
+                      <Text style={styles.bnccStatValue}>
+                        {selectedReport.habilidadesBNCC?.EM13CO13?.dicasUtilizadas ?? 0}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.bnccNoteComp}>
+                    Mede a compreensão de codificação binária como representação numérica (conversão de potências de 2).
+                  </Text>
+                </View>
+
+                {/* Registro Algorítmico Rodada a Rodada */}
+                <Text style={styles.sectionHeading}>Registro Algorítmico Rodada a Rodada:</Text>
+                {selectedReport.logDetalhadoRodadas && selectedReport.logDetalhadoRodadas.length > 0 ? (
+                  <View style={styles.logList}>
+                    {selectedReport.logDetalhadoRodadas.map((log, index) => {
+                      const isSuccess = log.success === true;
+                      const isError = log.success === false;
+
+                      return (
+                        <View
+                          key={index}
+                          style={[
+                            styles.logItem,
+                            isSuccess && styles.logItemSuccess,
+                            isError && styles.logItemError,
+                          ]}
+                        >
+                          <View style={styles.logItemTop}>
+                            <Text style={styles.logLeader}>👤 Líder: {log.leader || 'Equipe'}</Text>
+                            {log.attempt && (
+                              <Text style={styles.logAttemptBadge}>Tentativa #{log.attempt}</Text>
+                            )}
+                          </View>
+                          {log.cardTitle ? (
+                            <Text style={styles.logCardTitle}>📜 {log.cardTitle}</Text>
+                          ) : null}
+                          <Text style={styles.logDetail}>
+                            {log.success !== undefined
+                              ? isSuccess
+                                ? `✓ Acertou (Binário: ${log.selectedBinary || 'N/A'}, Ano: ${log.guessedYear || 'N/A'})`
+                                : `✕ Erro: digitou ${log.guessedYear || 'N/A'} (-${log.penalty || 0} pts)`
+                              : log.action || 'Ação registrada'}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <View style={styles.emptyLogBox}>
+                    <Text style={styles.emptyLogText}>Nenhum registro detalhado nesta partida.</Text>
+                  </View>
+                )}
               </View>
             ) : (
+              /* LISTA DE TODOS OS RELATÓRIOS */
               <View>
+                <View style={styles.infoBanner}>
+                  <Text style={styles.infoBannerIcon}>💡</Text>
+                  <View style={styles.infoBannerContent}>
+                    <Text style={styles.infoBannerTitle}>Avaliação Integrada BNCC</Text>
+                    <Text style={styles.infoBannerText}>
+                      Cada partida finalizada gera diagnósticos automáticos de Cronologia Histórica (EM13CHS103) e Raciocínio Computacional Binário (EM13CO13).
+                    </Text>
+                  </View>
+                </View>
+
                 {allReports.length === 0 ? (
                   <View style={styles.emptyState}>
                     <Text style={styles.emptyIcon}>📋</Text>
+                    <Text style={styles.emptyTitle}>Nenhum Relatório Gerado Ainda</Text>
                     <Text style={styles.emptyText}>
-                      Nenhum relatório gerado ainda. As partidas finalizadas aparecerão aqui com dados completos de avaliação BNCC.
+                      Quando os alunos finalizarem uma partida (Local ou Wi-Fi), o relatório com métricas pedagógicas aparecerá automaticamente aqui.
                     </Text>
                   </View>
                 ) : (
@@ -227,17 +373,41 @@ export default function TeacherScreen({ onClose, localReports = [] }) {
                         key={idx}
                         style={styles.reportSummaryCard}
                         onPress={() => setSelectedReport(rep)}
+                        activeOpacity={0.7}
                       >
                         <View style={styles.summaryTop}>
-                          <Text style={styles.summaryRoom}>{rep.roomId}</Text>
-                          <Text style={styles.summaryScore}>{rep.pontuacaoFinal} pts</Text>
+                          <View style={styles.summaryRoomBadge}>
+                            <Text style={styles.summaryRoom}>{rep.roomId || 'SALA'}</Text>
+                          </View>
+                          <Text style={styles.summaryScore}>{rep.pontuacaoFinal ?? 0} pts</Text>
                         </View>
-                        <Text style={styles.summaryDate}>{rep.dataHora}</Text>
-                        <Text style={styles.summaryMembers}>
-                          Alunos: {rep.participantes?.join(', ')}
+
+                        <Text style={styles.summaryDate}>📅 {rep.dataHora || 'Recente'}</Text>
+
+                        <Text style={styles.summaryMembers} numberOfLines={2}>
+                          👥 Alunos: {rep.participantes && rep.participantes.length > 0
+                            ? rep.participantes.join(', ')
+                            : 'Nenhum integrante informado'}
                         </Text>
+
+                        {/* Mini-Badges de Habilidades BNCC */}
+                        <View style={styles.summaryBnccRow}>
+                          <View style={styles.summaryBnccPill}>
+                            <Text style={styles.summaryBnccLabel}>EM13CHS103:</Text>
+                            <Text style={styles.summaryBnccVal}>
+                              {rep.habilidadesBNCC?.EM13CHS103?.precisaoCronologica || '100%'}
+                            </Text>
+                          </View>
+                          <View style={styles.summaryBnccPillComp}>
+                            <Text style={styles.summaryBnccLabel}>EM13CO13:</Text>
+                            <Text style={styles.summaryBnccValComp}>
+                              {rep.habilidadesBNCC?.EM13CO13?.precisaoDecodificacao || '100%'}
+                            </Text>
+                          </View>
+                        </View>
+
                         <View style={styles.viewReportBtn}>
-                          <Text style={styles.viewReportBtnText}>Visualizar Registro Completo →</Text>
+                          <Text style={styles.viewReportBtnText}>Visualizar Diagnóstico Completo →</Text>
                         </View>
                       </TouchableOpacity>
                     ))}
@@ -248,21 +418,33 @@ export default function TeacherScreen({ onClose, localReports = [] }) {
           </View>
         )}
 
-        {/* TAB 2: GERENCIADOR DE SALAS */}
+        {/* ========================================================= */}
+        {/* ABA 2: GERENCIADOR DE SALAS WI-FI                        */}
+        {/* ========================================================= */}
         {activeTab === 'rooms' && (
           <View>
             <View style={styles.limitInfoBanner}>
-              <Text style={styles.limitInfoTitle}>Regra de Capacidade do Servidor:</Text>
+              <View style={styles.limitInfoTop}>
+                <Text style={styles.limitInfoTitle}>Regra de Capacidade do Servidor</Text>
+                <TouchableOpacity
+                  style={styles.refreshBtn}
+                  onPress={() => socketService.getAdminReports(password)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.refreshBtnText}>🔄 Atualizar</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={styles.limitInfoText}>
-                O sistema permite no máximo <Text style={styles.boldText}>5 salas ativas simultaneamente</Text> (SALA-01 a SALA-05). Encerre salas que foram concluídas para liberar espaço para outros grupos.
+                O sistema permite no máximo <Text style={styles.boldText}>5 salas ativas simultaneamente</Text> (SALA-01 a SALA-05). Encerre salas finalizadas ou inativas para liberar vagas a novos grupos.
               </Text>
             </View>
 
             {activeRooms.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyIcon}>📡</Text>
+                <Text style={styles.emptyTitle}>Todas as 5 Vagas Disponíveis</Text>
                 <Text style={styles.emptyText}>
-                  Nenhuma sala ativa no momento no servidor WebSocket. Todas as 5 vagas estão liberadas.
+                  Nenhuma sala multiplayer Wi-Fi em andamento no servidor local no momento.
                 </Text>
               </View>
             ) : (
@@ -270,23 +452,30 @@ export default function TeacherScreen({ onClose, localReports = [] }) {
                 {activeRooms.map((room) => (
                   <View key={room.id} style={styles.roomItemCard}>
                     <View style={styles.roomItemHeader}>
-                      <Text style={styles.roomItemId}>{room.id}</Text>
-                      <View style={styles.statusPill}>
-                        <Text style={styles.statusPillText}>{room.status}</Text>
+                      <View style={styles.roomItemIdRow}>
+                        <Text style={styles.roomItemId}>{room.id}</Text>
+                        <View style={styles.statusPill}>
+                          <Text style={styles.statusPillText}>{room.status || 'Ativa'}</Text>
+                        </View>
                       </View>
+                      <Text style={styles.roomScoreBadge}>{room.score ?? 0} pts</Text>
                     </View>
+
                     <Text style={styles.roomItemText}>
-                      Alunos conectados ({room.players?.length}/5): {room.players?.join(', ') || 'Nenhum'}
+                      👥 <Text style={styles.boldText}>Alunos conectados ({room.players?.length || 0}/5):</Text>{' '}
+                      {room.players && room.players.length > 0 ? room.players.join(', ') : 'Nenhum'}
                     </Text>
+
                     <Text style={styles.roomItemText}>
-                      Rodada: {room.round} de {room.totalCards} • Pontuação: {room.score}
+                      🎯 <Text style={styles.boldText}>Progresso:</Text> Rodada {room.round || 1} de {room.totalCards || 10}
                     </Text>
 
                     <TouchableOpacity
                       style={styles.resetRoomBtn}
                       onPress={() => handleResetRoom(room.id)}
+                      activeOpacity={0.8}
                     >
-                      <Text style={styles.resetRoomBtnText}>Encerrar / Liberar Sala</Text>
+                      <Text style={styles.resetRoomBtnText}>⚠️ Encerrar e Liberar Vaga da Sala</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -304,69 +493,113 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+
+  // LOGIN SCREEN
   loginScrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
   loginCard: {
-    margin: 20,
-    marginTop: 60,
+    width: '100%',
+    maxWidth: 420,
     backgroundColor: Colors.surface,
     padding: 24,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#38BDF8',
     alignItems: 'center',
   },
+  loginIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: '#38BDF8',
+  },
   loginIcon: {
-    fontSize: 40,
+    fontSize: 28,
+  },
+  loginBadge: {
+    backgroundColor: '#1E1B4B',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#4338CA',
     marginBottom: 8,
+  },
+  loginBadgeText: {
+    color: '#A5B4FC',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   loginTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: Colors.secondary,
+    color: Colors.text,
+    textAlign: 'center',
   },
   loginSubtitle: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: Colors.textMuted,
     textAlign: 'center',
-    marginVertical: 12,
-    lineHeight: 17,
+    marginTop: 8,
+    marginBottom: 20,
+    lineHeight: 18,
+  },
+  inputGroup: {
+    width: '100%',
+    marginBottom: 10,
   },
   fieldLabel: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: Colors.textMuted,
-    alignSelf: 'flex-start',
+    color: Colors.primary,
     marginBottom: 6,
+    letterSpacing: 0.5,
   },
   passwordInput: {
     width: '100%',
     backgroundColor: Colors.surfaceLight,
-    padding: 12,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 12,
     color: Colors.text,
     fontSize: 15,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.surfaceBorder,
+  },
+  quickFillBtn: {
+    alignSelf: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     marginBottom: 16,
+  },
+  quickFillText: {
+    color: Colors.secondary,
+    fontSize: 12,
+    fontWeight: '600',
   },
   loginBtn: {
     width: '100%',
-    backgroundColor: Colors.secondaryDark,
+    backgroundColor: Colors.primaryDark,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.primary,
   },
   loginBtnText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 15,
   },
   backBtn: {
     paddingVertical: 8,
@@ -375,38 +608,62 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 13,
   },
+
+  // TOP HEADER
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    paddingTop: 36,
-    paddingBottom: 14,
     paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.surfaceBorder,
   },
-  headerTitle: {
-    fontSize: 16,
+  headerTextCol: {
+    flex: 1,
+    marginRight: 12,
+  },
+  headerBadge: {
+    backgroundColor: '#1E1B4B',
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#4338CA',
+  },
+  headerBadgeText: {
+    color: '#A5B4FC',
+    fontSize: 9,
     fontWeight: 'bold',
-    color: Colors.secondary,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: Colors.text,
   },
   headerSubtitle: {
     fontSize: 11,
     color: Colors.textMuted,
+    marginTop: 1,
   },
   closeBtn: {
     backgroundColor: Colors.surfaceLight,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
   },
   closeBtnText: {
     color: Colors.text,
     fontSize: 12,
+    fontWeight: 'bold',
   },
+
+  // TABS
   tabBar: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
@@ -415,48 +672,118 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     flex: 1,
-    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 12,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
+    gap: 6,
   },
   tabItemActive: {
-    borderBottomColor: Colors.secondary,
+    borderBottomColor: Colors.primary,
+    backgroundColor: 'rgba(56, 189, 248, 0.05)',
+  },
+  tabIcon: {
+    fontSize: 14,
   },
   tabText: {
     color: Colors.textMuted,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   tabTextActive: {
-    color: Colors.secondary,
+    color: Colors.primary,
     fontWeight: 'bold',
   },
+  tabBadge: {
+    backgroundColor: Colors.surfaceLight,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  tabBadgeActive: {
+    backgroundColor: Colors.primaryDark,
+  },
+  tabBadgeText: {
+    color: Colors.textMuted,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  tabBadgeTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // MAIN CONTENT CONTAINER
   content: {
     padding: 16,
-    paddingBottom: 30,
+    paddingBottom: 24,
   },
+
+  // INFO BANNER
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    gap: 10,
+  },
+  infoBannerIcon: {
+    fontSize: 20,
+  },
+  infoBannerContent: {
+    flex: 1,
+  },
+  infoBannerTitle: {
+    color: Colors.primary,
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  infoBannerText: {
+    color: Colors.textMuted,
+    fontSize: 11,
+    lineHeight: 15,
+  },
+
+  // EMPTY STATES
   emptyState: {
     alignItems: 'center',
-    padding: 30,
+    backgroundColor: Colors.surface,
+    padding: 28,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
   },
   emptyIcon: {
     fontSize: 40,
     marginBottom: 10,
   },
+  emptyTitle: {
+    color: Colors.text,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
   emptyText: {
     color: Colors.textMuted,
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
   },
+
+  // REPORTS LIST
   reportsGrid: {
     gap: 12,
   },
   reportSummaryCard: {
     backgroundColor: Colors.surface,
-    padding: 14,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
   },
@@ -464,10 +791,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  summaryRoomBadge: {
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#38BDF8',
   },
   summaryRoom: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
     color: Colors.primary,
   },
@@ -485,79 +820,268 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 12,
     marginBottom: 10,
+    lineHeight: 16,
+  },
+  summaryBnccRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  summaryBnccPill: {
+    flexDirection: 'row',
+    backgroundColor: '#1E1B4B',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#4338CA',
+  },
+  summaryBnccPillComp: {
+    flexDirection: 'row',
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#0284C7',
+  },
+  summaryBnccLabel: {
+    color: '#A5B4FC',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  summaryBnccVal: {
+    color: '#34D399',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  summaryBnccValComp: {
+    color: '#38BDF8',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   viewReportBtn: {
     alignSelf: 'flex-start',
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
   },
   viewReportBtnText: {
     color: Colors.primary,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
+
+  // REPORT DETAIL CARD
   reportDetailCard: {
     backgroundColor: Colors.surface,
     padding: 16,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
   },
   backToListBtn: {
-    marginBottom: 12,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.surfaceLight,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    marginBottom: 14,
   },
   backToListText: {
     color: Colors.primary,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 'bold',
   },
-  reportMetaHeader: {
+  detailTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 14,
   },
   detailRoomTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.primary,
   },
   detailDateText: {
     color: Colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
+    marginTop: 2,
   },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginBottom: 4,
+  detailScorePill: {
+    backgroundColor: '#78350F',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.secondary,
   },
-  bnccDiagnosisBox: {
-    backgroundColor: '#1E1B4B',
+  detailScoreText: {
+    color: '#FDE68A',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  metaCardsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  metaCard: {
+    flex: 1,
+    backgroundColor: Colors.surfaceLight,
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  metaCardIcon: {
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  metaCardLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: Colors.textMuted,
+    marginBottom: 2,
+  },
+  metaCardValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.text,
+  },
+  participantsSection: {
+    backgroundColor: Colors.surfaceLight,
     padding: 12,
     borderRadius: 10,
-    marginVertical: 12,
+    marginBottom: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
+  },
+  sectionSmallLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: Colors.primary,
+    marginBottom: 4,
+  },
+  participantsText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+
+  // BNCC CARDS
+  bnccCardHistorical: {
+    backgroundColor: '#1E1B4B',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#4338CA',
   },
-  bnccDiagnosisTitle: {
-    color: '#A5B4FC',
-    fontWeight: 'bold',
-    fontSize: 12,
-    marginBottom: 6,
+  bnccCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
   },
-  bnccItem: {
+  bnccCodeBadge: {
+    backgroundColor: '#312E81',
+    color: '#A5B4FC',
+    fontSize: 10,
+    fontWeight: 'bold',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#6366F1',
+  },
+  bnccCompetenceTitle: {
     color: '#E0E7FF',
     fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  boldText: {
     fontWeight: 'bold',
   },
+  bnccStatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  bnccStatItem: {
+    flex: 1,
+  },
+  bnccStatLabel: {
+    fontSize: 10,
+    color: '#A5B4FC',
+    marginBottom: 2,
+  },
+  bnccStatValueHighlight: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#34D399',
+  },
+  bnccStatValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#F87171',
+  },
+  bnccNote: {
+    color: '#C7D2FE',
+    fontSize: 11,
+    lineHeight: 15,
+  },
+
+  bnccCardComputational: {
+    backgroundColor: '#0F172A',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#0284C7',
+  },
+  bnccCodeBadgeComp: {
+    backgroundColor: '#0369A1',
+    color: '#BAE6FD',
+    fontSize: 10,
+    fontWeight: 'bold',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#38BDF8',
+  },
+  bnccCompetenceTitleComp: {
+    color: '#E0F2FE',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  bnccStatValueHighlightComp: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#38BDF8',
+  },
+  bnccNoteComp: {
+    color: '#93C5FD',
+    fontSize: 11,
+    lineHeight: 15,
+  },
+
+  // LOG SECTION
   sectionHeading: {
     fontSize: 13,
     fontWeight: 'bold',
     color: Colors.secondary,
-    marginTop: 10,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   logList: {
     gap: 8,
@@ -567,45 +1091,102 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: Colors.primary,
+    borderLeftColor: Colors.surfaceBorder,
+  },
+  logItemSuccess: {
+    borderLeftColor: Colors.success,
+  },
+  logItemError: {
+    borderLeftColor: Colors.danger,
+  },
+  logItemTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
   },
   logLeader: {
     color: Colors.primary,
     fontWeight: 'bold',
     fontSize: 11,
+  },
+  logAttemptBadge: {
+    fontSize: 10,
+    color: Colors.textMuted,
+  },
+  logCardTitle: {
+    color: Colors.text,
+    fontSize: 11,
+    fontWeight: '600',
     marginBottom: 2,
   },
   logDetail: {
-    color: Colors.text,
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  limitInfoBanner: {
-    backgroundColor: Colors.surfaceLight,
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 14,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.secondary,
-  },
-  limitInfoTitle: {
-    color: Colors.secondary,
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  limitInfoText: {
     color: Colors.textSecondary,
     fontSize: 11,
     lineHeight: 16,
+  },
+  emptyLogBox: {
+    backgroundColor: Colors.surfaceLight,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  emptyLogText: {
+    color: Colors.textMuted,
+    fontSize: 11,
+  },
+
+  // ROOMS TAB
+  limitInfoBanner: {
+    backgroundColor: Colors.surface,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.secondary,
+  },
+  limitInfoTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  limitInfoTitle: {
+    color: Colors.secondary,
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  refreshBtn: {
+    backgroundColor: Colors.surfaceLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  refreshBtnText: {
+    color: Colors.textSecondary,
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  limitInfoText: {
+    color: Colors.textMuted,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: Colors.text,
   },
   roomsList: {
     gap: 12,
   },
   roomItemCard: {
     backgroundColor: Colors.surface,
-    padding: 14,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
   },
@@ -613,10 +1194,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  roomItemIdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   roomItemId: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     color: Colors.primary,
   },
@@ -625,6 +1211,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#059669',
   },
   statusPillText: {
     color: '#A7F3D0',
@@ -632,20 +1220,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
+  roomScoreBadge: {
+    color: Colors.secondary,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   roomItemText: {
     fontSize: 12,
     color: Colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 17,
   },
   resetRoomBtn: {
     backgroundColor: '#7F1D1D',
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#DC2626',
   },
   resetRoomBtnText: {
-    color: '#FCA5A5',
+    color: '#FEE2E2',
     fontWeight: 'bold',
     fontSize: 12,
   },
