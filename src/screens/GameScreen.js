@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scrollArea: {
-    paddingBottom: 150,
+    paddingBottom: 24,
   },
   decodingSection: {
     padding: 16,

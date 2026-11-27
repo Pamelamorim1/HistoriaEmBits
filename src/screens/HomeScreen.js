@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingTop: 16,
-    paddingBottom: 150,
+    paddingBottom: 24,
     backgroundColor: 'transparent',
   },
   topControlRow: {
