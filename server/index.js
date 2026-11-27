@@ -66,29 +66,41 @@ function shuffle(array) {
 
 function prepareCardRound(card) {
   if (!card) return null;
-  const distractors = Array.isArray(card.distratores_binarios) ? card.distratores_binarios : [];
-  const binaryOptions = shuffle([card.ano_binario, ...distractors]);
+  const distractors = Array.isArray(card.distratores_binarios)
+    ? card.distratores_binarios.filter((d) => typeof d === 'string' && d.length > 0)
+    : [];
+  const base = typeof card.ano_binario === 'string' && card.ano_binario.length > 0 ? [card.ano_binario] : [];
+  const binaryOptions = shuffle([...base, ...distractors]);
   return {
-    id: card.id,
-    titulo: card.titulo,
-    resumo_historico: card.resumo_historico,
-    imagem_url: card.imagem_url,
+    id: card.id || 'card',
+    titulo: card.titulo || 'Evento Histórico',
+    resumo_historico: card.resumo_historico || '',
+    imagem_url: card.imagem_url || '',
     binaryOptions,
     // Do not reveal ano_decimal or ano_binario to clients during decoding
   };
 }
 
-function isSocketLeader(room, socket) {
+function isSocketLeader(room, socket, playerId = null) {
   if (!room || !room.players || room.players.length === 0) return false;
   const currentLeader = room.players[room.leaderIndex];
   if (!currentLeader) return false;
-  return socket.id === currentLeader.socketId || socket.playerId === currentLeader.id || socket.id === currentLeader.id;
+  return (
+    socket.id === currentLeader.socketId ||
+    (socket.playerId && socket.playerId === currentLeader.id) ||
+    (playerId && playerId === currentLeader.id) ||
+    socket.id === currentLeader.id
+  );
 }
 
-function findPlayerInRoom(room, socket) {
+function findPlayerInRoom(room, socket, playerId = null) {
   if (!room || !room.players) return null;
   return room.players.find(
-    (p) => p.socketId === socket.id || p.id === socket.playerId || p.id === socket.id
+    (p) =>
+      p.socketId === socket.id ||
+      (socket.playerId && p.id === socket.playerId) ||
+      (playerId && p.id === playerId) ||
+      p.id === socket.id
   );
 }
 
@@ -368,18 +380,19 @@ io.on('connection', (socket) => {
   });
 
   // 4. Selecionar Binário (Apenas Líder)
-  socket.on('select_binary', ({ roomId, binaryString }) => {
-    const room = rooms.get(roomId);
+  socket.on('select_binary', ({ roomId, binaryString, playerId }) => {
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || room.status !== 'playing' || room.phase !== 'decoding') return;
 
-    if (!isSocketLeader(room, socket)) {
+    if (!isSocketLeader(room, socket, playerId)) {
       return socket.emit('error_message', 'Apenas o Líder da rodada pode selecionar o código.');
     }
 
     const currentLeader = room.players[room.leaderIndex];
     room.selectedBinary = binaryString;
     // Broadcast real-time selection to all team members
-    io.to(roomId).emit('binary_selected', {
+    io.to(room.id).emit('binary_selected', {
       selectedBinary: binaryString,
       leaderName: currentLeader.name,
     });
@@ -489,57 +502,33 @@ io.on('connection', (socket) => {
     }
   }
 
-  // 5. Submeter Ano Decimal (Apenas Líder - Requer Consenso em Salas Multiplayer)
-  socket.on('submit_year', ({ roomId, binaryString, guessedYear }) => {
+  // 5. Submeter Ano Decimal (Apenas Líder)
+  socket.on('submit_year', ({ roomId, binaryString, guessedYear, playerId }) => {
     const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
     const room = rooms.get(cleanRoomId);
     if (!room || room.status !== 'playing' || room.phase !== 'decoding') return;
 
-    if (!isSocketLeader(room, socket)) {
+    if (!isSocketLeader(room, socket, playerId)) {
       return socket.emit('error_message', 'Apenas o Líder da rodada pode submeter palpites.');
     }
 
-    if (room.timelineProposal) return;
-
-    // Se houver apenas 1 jogador conectado (ex: teste solo), executa direto sem necessidade de consenso
-    if (room.players.length <= 1) {
-      return executeYearSubmission(room, binaryString, guessedYear);
-    }
-
-    const currentLeader = room.players[room.leaderIndex] || { name: 'Equipe' };
-    const votes = {};
-    votes[currentLeader.id] = true; // Propositor (Líder) já concorda
-
-    room.timelineProposal = {
-      type: 'year_verification',
-      binaryString,
-      guessedYear,
-      proposerId: currentLeader.id,
-      proposerName: currentLeader.name,
-      cardTitle: room.currentCard?.titulo,
-      cardYear: guessedYear,
-      votes,
-    };
-
-    io.to(room.id).emit('timeline_proposal_updated', {
-      proposal: room.timelineProposal,
-      room: sanitizeRoomState(room),
-    });
+    executeYearSubmission(room, binaryString, guessedYear);
   });
 
   // 6. Decisão Crítica do 3º Erro (Apenas Líder)
-  socket.on('resolve_third_attempt', ({ roomId, action }) => {
-    const room = rooms.get(roomId);
+  socket.on('resolve_third_attempt', ({ roomId, action, playerId }) => {
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || room.status !== 'playing') return;
 
-    if (!isSocketLeader(room, socket)) {
+    if (!isSocketLeader(room, socket, playerId)) {
       return socket.emit('error_message', 'Apenas o Líder pode registrar a decisão do grupo.');
     }
 
     const currentLeader = room.players[room.leaderIndex] || { name: 'Equipe' };
     if (action === 'continue') {
       room.promptThirdAttempt = false;
-      io.to(roomId).emit('third_attempt_resolved', {
+      io.to(room.id).emit('third_attempt_resolved', {
         action: 'continue',
         message: 'O grupo optou por continuar tentando com base nas 3 pistas! Novos erros descontarão -25 pts.',
         room: sanitizeRoomState(room),
@@ -618,6 +607,9 @@ io.on('connection', (socket) => {
   function advanceTimelineRound(room, successMessage) {
     const nextIndex = room.currentCardIndex + 1;
     const totalCardsInDeck = Math.min(room.cardsDeck.length, 10);
+
+    // Garante limpeza de propostas pendentes
+    room.timelineProposal = null;
 
     // Na próxima escolha de posição, todas as cartas voltam a ter o ano decimal oculto
     room.timeline.forEach((c) => {
@@ -766,37 +758,52 @@ io.on('connection', (socket) => {
     if (!room || !room.timelineProposal) return;
     const proposal = room.timelineProposal;
     room.timelineProposal = null;
-    if (proposal.type === 'year_verification') {
-      executeYearSubmission(room, proposal.binaryString, proposal.guessedYear);
-    } else {
-      executeTimelinePlacement(room, proposal.insertIndex);
-    }
+    executeTimelinePlacement(room, proposal.insertIndex);
   }
 
-  // 7. Propor Posicionamento na Linha do Tempo (Requer Consenso de Todos)
-  socket.on('place_card_timeline', ({ roomId, insertIndex }) => {
-    const room = rooms.get(roomId);
+  // 7. Propor Posicionamento na Linha do Tempo (Requer Consenso de Todos os Conectados)
+  socket.on('place_card_timeline', ({ roomId, insertIndex, playerId }) => {
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || room.status !== 'playing' || room.phase !== 'timeline') return;
 
-    if (!isSocketLeader(room, socket)) {
+    if (!isSocketLeader(room, socket, playerId)) {
       return socket.emit('error_message', 'Apenas o Líder da rodada pode propor o posicionamento da carta.');
     }
 
     if (room.timelineProposal) return;
 
-    // Se houver apenas 1 jogador conectado (ex: teste solo), executa direto
-    if (room.players.length <= 1) {
+    // Apenas jogadores ativos (conectados) participam da contagem
+    const connectedPlayers = room.players.filter((p) => p.connected !== false);
+
+    // Se houver apenas 1 jogador conectado (ex: teste solo ou colegas desconectados), posiciona direto
+    if (connectedPlayers.length <= 1) {
       return executeTimelinePlacement(room, insertIndex);
     }
 
-    const currentLeader = room.players[room.leaderIndex];
-    // Com 2 ou mais jogadores: cria proposta de consenso para toda a equipe aceitar!
+    const currentLeader = room.players[room.leaderIndex] || { name: 'Equipe' };
     const votes = {};
     votes[currentLeader.id] = true; // Propositor (Líder) já concorda
+
+    // Obter descrição pedagógica e contextualizada da posição entre as cartas
+    let positionDescription = `Ponto #${insertIndex}`;
+    const timeline = room.timeline;
+    if (timeline && timeline.length > 0) {
+      if (insertIndex === 0) {
+        positionDescription = `no início da Linha do Tempo (antes de "${timeline[0].titulo}")`;
+      } else if (insertIndex >= timeline.length) {
+        positionDescription = `no final da Linha do Tempo (depois de "${timeline[timeline.length - 1].titulo}")`;
+      } else {
+        const prevCard = timeline[insertIndex - 1];
+        const nextCard = timeline[insertIndex];
+        positionDescription = `entre "${prevCard.titulo}" e "${nextCard.titulo}"`;
+      }
+    }
 
     room.timelineProposal = {
       type: 'timeline',
       insertIndex,
+      positionDescription,
       proposerId: currentLeader.id,
       proposerName: currentLeader.name,
       cardTitle: room.currentCard?.titulo,
@@ -804,27 +811,25 @@ io.on('connection', (socket) => {
       votes,
     };
 
-    io.to(roomId).emit('timeline_proposal_updated', {
+    io.to(room.id).emit('timeline_proposal_updated', {
       proposal: room.timelineProposal,
       room: sanitizeRoomState(room),
     });
   });
 
-  // Votar na Proposta (Posicionamento ou Verificação de Ano - Consenso Coletivo)
-  socket.on('vote_timeline_proposal', ({ roomId, accept }) => {
-    const room = rooms.get(roomId);
+  // Votar na Proposta de Posicionamento (Consenso Coletivo)
+  socket.on('vote_timeline_proposal', ({ roomId, accept, playerId }) => {
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || !room.timelineProposal) return;
 
-    const voter = findPlayerInRoom(room, socket);
+    const voter = findPlayerInRoom(room, socket, playerId);
     if (!voter) return;
 
-    const isYearVerif = room.timelineProposal.type === 'year_verification';
-
     if (!accept) {
-      const actionName = isYearVerif ? 'de verificação do ano' : 'de posicionamento';
-      const rejectedMsg = `A proposta ${actionName} foi rejeitada por ${voter.name}. Conversem em grupo e cheguem a um novo consenso!`;
+      const rejectedMsg = `A proposta de posicionamento foi recusada por ${voter.name}. Conversem em grupo e cheguem a um novo consenso!`;
       room.timelineProposal = null;
-      return io.to(roomId).emit('timeline_proposal_rejected', {
+      return io.to(room.id).emit('timeline_proposal_rejected', {
         message: rejectedMsg,
         room: sanitizeRoomState(room),
       });
@@ -832,39 +837,40 @@ io.on('connection', (socket) => {
 
     room.timelineProposal.votes[voter.id] = true;
 
-    // Checa se TODOS os jogadores da sala aceitaram
-    const allAccepted = room.players.every((p) => room.timelineProposal.votes[p.id] === true);
+    // Checa se TODOS os jogadores ATIVOS (conectados) aceitaram
+    const connectedPlayers = room.players.filter((p) => p.connected !== false);
+    const allAccepted = connectedPlayers.every((p) => room.timelineProposal.votes[p.id] === true);
 
     if (allAccepted) {
       executeActiveProposal(room);
     } else {
-      io.to(roomId).emit('timeline_proposal_updated', {
+      io.to(room.id).emit('timeline_proposal_updated', {
         proposal: room.timelineProposal,
         room: sanitizeRoomState(room),
       });
     }
   });
 
-  // Cancelar Proposta
-  socket.on('cancel_timeline_proposal', ({ roomId }) => {
-    const room = rooms.get(roomId);
+  // Cancelar Proposta de Posicionamento
+  socket.on('cancel_timeline_proposal', ({ roomId, playerId }) => {
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || !room.timelineProposal) return;
-    const isYearVerif = room.timelineProposal.type === 'year_verification';
+
     room.timelineProposal = null;
-    io.to(roomId).emit('timeline_proposal_cancelled', {
-      message: isYearVerif
-        ? 'Proposta de verificação de ano cancelada pelo Líder.'
-        : 'Proposta de posicionamento cancelada pela equipe.',
+    io.to(room.id).emit('timeline_proposal_cancelled', {
+      message: 'Proposta de posicionamento cancelada pela equipe.',
       room: sanitizeRoomState(room),
     });
   });
 
   // Decisão Crítica do 3º Erro na Linha do Tempo (Apenas Líder)
-  socket.on('resolve_timeline_third_attempt', ({ roomId, action }) => {
-    const room = rooms.get(roomId);
+  socket.on('resolve_timeline_third_attempt', ({ roomId, action, playerId }) => {
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || room.status !== 'playing' || room.phase !== 'timeline') return;
 
-    if (!isSocketLeader(room, socket)) {
+    if (!isSocketLeader(room, socket, playerId)) {
       return socket.emit('error_message', 'Apenas o Líder pode registrar a decisão do grupo.');
     }
 
@@ -908,7 +914,7 @@ io.on('connection', (socket) => {
       });
 
       const nextLeaderIndex = (room.leaderIndex + 1) % room.players.length;
-      io.to(roomId).emit('timeline_third_attempt_resolved', {
+      io.to(room.id).emit('timeline_third_attempt_resolved', {
         action: 'reveal',
         message: `Posicionamento Assistido acionado (-150 pts). A carta foi inserida na posição correta (#${correctIndex}).`,
       });
@@ -921,7 +927,8 @@ io.on('connection', (socket) => {
 
   // Revelar Ano Decodificado de Carta da Linha do Tempo (Gasta 50 pontos)
   socket.on('reveal_central_year', ({ roomId, cardId }) => {
-    const room = rooms.get(roomId);
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || room.status !== 'playing') return;
 
     if (room.score < 50) {
@@ -935,7 +942,7 @@ io.on('connection', (socket) => {
       room.score = Math.max(0, room.score - 50);
       targetCard.anoRevelado = true;
       handleZeroScoreTransition(room, false);
-      io.to(roomId).emit('central_year_revealed', {
+      io.to(room.id).emit('central_year_revealed', {
         message: `Ano de "${targetCard.titulo}" revelado (${targetCard.ano_decimal})! (-50 pontos da equipe)`,
         room: sanitizeRoomState(room),
       });
@@ -943,11 +950,12 @@ io.on('connection', (socket) => {
   });
 
   // Responder Desafio de Resgate (Reinicialização Binária ao zerar pontos)
-  socket.on('submit_rescue_challenge', ({ roomId, guessedDecimal }) => {
-    const room = rooms.get(roomId);
+  socket.on('submit_rescue_challenge', ({ roomId, guessedDecimal, playerId }) => {
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || room.status !== 'playing' || !room.rescueChallenge) return;
 
-    if (!isSocketLeader(room, socket)) {
+    if (!isSocketLeader(room, socket, playerId)) {
       return socket.emit('error_message', 'Apenas o Líder pode enviar a resposta do Desafio de Resgate.');
     }
 
@@ -964,7 +972,7 @@ io.on('connection', (socket) => {
         action: 'Desafio de Resgate (Sucesso +150 pts)',
         success: true,
       });
-      io.to(roomId).emit('rescue_challenge_resolved', {
+      io.to(room.id).emit('rescue_challenge_resolved', {
         success: true,
         message: 'Reinicialização Binária concluída! A equipe recuperou +150 pontos de emergência!',
         room: sanitizeRoomState(room),
@@ -976,7 +984,7 @@ io.on('connection', (socket) => {
         action: 'Desafio de Resgate (Falha -> Reserva de Emergência)',
         success: false,
       });
-      io.to(roomId).emit('rescue_challenge_resolved', {
+      io.to(room.id).emit('rescue_challenge_resolved', {
         success: false,
         message: `Código incorreto (o valor era ${expected}). A equipe entrou em Reserva de Emergência: recursos pagos bloqueados e o próximo erro encerra a partida!`,
         room: sanitizeRoomState(room),

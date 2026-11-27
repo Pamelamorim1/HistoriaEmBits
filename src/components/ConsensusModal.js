@@ -77,7 +77,11 @@ export default function ConsensusModal({
                   <Text style={styles.cardYear}>Ano convertido: {proposal.cardYear}</Text>
                 )}
                 <View style={styles.infoBadge}>
-                  <Text style={styles.infoBadgeText}>Posição escolhida na Linha do Tempo: Ponto #{proposal.insertIndex}</Text>
+                  <Text style={styles.infoBadgeText}>
+                    {proposal.positionDescription
+                      ? `Posição proposta: ${proposal.positionDescription}`
+                      : `Posição escolhida na Linha do Tempo: Ponto #${proposal.insertIndex}`}
+                  </Text>
                 </View>
               </>
             )}
@@ -89,6 +93,8 @@ export default function ConsensusModal({
               ❓ <Text style={styles.questionBold}>Pergunta para a Equipe:</Text>{' '}
               {isYearVerification
                 ? 'Todos concordam que o código binário e o ano decimal estão corretos?'
+                : proposal.positionDescription
+                ? `Todos concordam em posicionar esta carta ${proposal.positionDescription}?`
                 : 'Todos concordam que esta carta deve ser posicionada neste ponto da Linha do Tempo?'}
             </Text>
           </View>
@@ -130,6 +136,8 @@ export default function ConsensusModal({
                 🗣️ <Text style={styles.localNoticeBold}>Debate Coletivo:</Text>{' '}
                 {isYearVerification
                   ? 'Todos os integrantes da equipe reunidos concordam que este código binário e ano decimal estão corretos?'
+                  : proposal.positionDescription
+                  ? `Todos os integrantes concordam em posicionar esta carta ${proposal.positionDescription}?`
                   : 'Todos os integrantes da equipe reunidos concordam que esta carta pertence exatamente a este período?'}
               </Text>
             </View>

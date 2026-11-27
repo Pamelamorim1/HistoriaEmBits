@@ -349,9 +349,25 @@ export class LocalGameEngine {
       return this.placeCardTimeline(insertIndex);
     }
     const currentLeader = this.players[this.leaderIndex];
+
+    let positionDescription = `Ponto #${insertIndex}`;
+    const timeline = this.timeline;
+    if (timeline && timeline.length > 0) {
+      if (insertIndex === 0) {
+        positionDescription = `no início da Linha do Tempo (antes de "${timeline[0].titulo}")`;
+      } else if (insertIndex >= timeline.length) {
+        positionDescription = `no final da Linha do Tempo (depois de "${timeline[timeline.length - 1].titulo}")`;
+      } else {
+        const prevCard = timeline[insertIndex - 1];
+        const nextCard = timeline[insertIndex];
+        positionDescription = `entre "${prevCard.titulo}" e "${nextCard.titulo}"`;
+      }
+    }
+
     this.timelineProposal = {
       type: 'timeline',
       insertIndex,
+      positionDescription,
       proposerName: currentLeader.name,
       cardTitle: this.currentCard?.titulo,
       cardYear: this.currentCard?.ano_decimal,

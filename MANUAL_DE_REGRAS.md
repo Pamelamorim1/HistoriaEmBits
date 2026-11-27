@@ -63,44 +63,17 @@ Sempre que uma carta é fixada com sucesso na Linha do Tempo, o sistema dispara 
 
 ---
 
-## 4. O Sistema de Duplo Consenso Coletivo (100% de Aprovação)
+## 4. O Sistema de Consenso Coletivo na Linha do Tempo
 
-O jogo reforça a cooperação por meio de **duas etapas obrigatórias de Consenso da Equipe** em cada rodada multiplayer:
+O jogo foi desenhado para equilibrar fluidez de jogabilidade e debate cooperativo pedagógico:
 
-```
-[ Líder seleciona código e digita ano ]
-                   │
-                   ▼
-  🤝 CONSENSO 1: Verificação de Ano
-  "Todos concordam que o código binário e o ano decimal estão corretos?"
-                   │
-      ┌────────────┴────────────┐
-      ▼                         ▼
-  ❌ Alguém Recusa         ✅ 100% Aceitam
-  (Cancela proposta e      (Sistema valida
-   retoma o debate)         código e cálculo)
-                                │
-                                ▼
-               [ Ano Correto! Avança p/ Linha do Tempo ]
-                                │
-                                ▼
-               [ Líder propõe ponto de inserção ]
-                                │
-                                ▼
-                 🤝 CONSENSO 2: Linha do Tempo
-                 "Todos concordam que esta carta pertence a este ponto?"
-                                │
-                   ┌────────────┴────────────┐
-                   ▼                         ▼
-               ❌ Alguém Recusa         ✅ 100% Aceitam
-               (Cancela proposta e      (Sistema valida a
-                retoma o debate)         ordem cronológica)
-```
+1. **Decodificação Dinâmica (Fase 1):** O Líder da rodada seleciona a opção binária e digita o ano decimal correspondente. Os colegas acompanham a opção selecionada em tempo real em seus aparelhos e debatem verbalmente na sala de aula realizando os cálculos na Tabela $2^n$. Para manter o ritmo da aula, o Líder clica em **Verificar Ano** diretamente (sem interrupções de modais a cada tentativa).
+2. **Consenso Coletivo Cronológico (Fase 2):** Ao avançar para a Linha do Tempo, a equipe precisa tomar uma decisão estratégica conjunta. Quando o Líder clica em `[ + Inserir Aqui ]`, o sistema abre o painel de **Consenso da Equipe** para todos os participantes:
+   * **Contextualização Histórica Clara:** O modal informa exatamente a relação temporal proposta (ex.: *Inserir entre "Declaração de Independência dos EUA" e "Independência do Brasil"* ou *no início da Linha do Tempo*), permitindo que todos os colegas compreendam e argumentem sobre a ordem cronológica.
+   * **Votação dos Jogadores Ativos:** Cada integrante vota `✅ Concordar` ou `❌ Discordar`. Apenas jogadores conectados na sala são contabilizados, impedindo travamentos caso alguém sofra oscilação momentânea de sinal.
+   * **100% de Aprovação:** Quando todos os participantes ativos aceitam, o sistema valida a posição cronológica. Se alguém discordar, a proposta é cancelada para que a equipe revise a ordem dos acontecimentos.
 
-1. **Consenso 1 — Na Decodificação Binária:** Quando o Líder clica em *Verificar Ano*, o sistema não envia o palpite imediatamente. Abre-se um painel de votação exibindo o código binário escolhido e o ano decimal digitado. A verificação só ocorre se todos os participantes votarem `✅ Concordar`. Se alguém clicar em `❌ Discordar`, a submissão é cancelada para que a equipe revise os cálculos.
-2. **Consenso 2 — Na Linha do Tempo:** Ao sugerir onde a carta deve entrar na cronologia, abre-se uma nova votação de consenso. Apenas com 100% de aprovação a carta é testada na posição proposta.
-
-*(Nota: Em partidas individuais ou com apenas 1 jogador conectado, a validação ocorre diretamente, sem necessidade de tela de votação).*
+*(Nota: Em partidas individuais ou com apenas 1 jogador conectado, a validação cronológica é imediata).*
 
 ---
 
@@ -109,7 +82,7 @@ O jogo reforça a cooperação por meio de **duas etapas obrigatórias de Consen
 A equipe inicia a partida com um saldo de **1000 pontos**. Os pontos medem a precisão histórica e o equilíbrio operacional do grupo.
 
 ### 5.1. Bônus de Decodificação Binária
-Ao acertar conjuntamente o código binário e a conversão decimal:
+Ao acertar o código binário e a conversão decimal:
 * **Acerto na 1ª tentativa:** `+100 pontos` (Bônus máximo de precisão).
 * **Acerto na 2ª tentativa:** `+50 pontos`.
 * **Acerto na 3ª tentativa ou mais:** `+25 pontos`.
@@ -142,28 +115,26 @@ Ao atingir o 3º erro em qualquer fase, a equipe é colocada diante de uma escol
 ```mermaid
 flowchart TD
     A["Início da Rodada (Novo Líder Sorteado)"] --> B["Fase 1: Decodificação Binária"]
-    B --> C["Líder seleciona 1 binário e digita ano decimal"]
-    C --> D{"Consenso 1: Equipe aprova código e ano?"}
-    D -- "Alguém Discordou" --> B
-    D -- "100% Concordaram" --> E{"Código e Ano Corretos?"}
-    E -- "Incorreto" --> F["Penalidade de Pontos + Libera Pista"]
-    F --> G{"Completou 3 erros?"}
-    G -- "Não" --> B
-    G -- "Sim" --> H["Decisão Crítica: Continuar ou Revelação Assistida (-150 pts)"]
-    H -- "Continuar" --> B
-    H -- "Revelação Assistida" --> I["Fase 2: Posicionamento na Linha"]
-    E -- "Correto (+Pts)" --> I
-    I --> J["Líder propõe posição [ + Inserir Aqui ]"]
-    J --> K{"Consenso 2: Equipe aprova posição na Linha?"}
-    K -- "Alguém Discordou" --> I
-    K -- "100% Concordaram" --> L{"Posição Cronológica Correta?"}
-    L -- "Incorreto" --> M["Penalidade + Pista Cronológica"]
-    M --> I
-    L -- "Correto!" --> N["Carta Fixada na Linha do Tempo!"]
-    N --> O{"Restam cartas no baralho?"}
-    O -- "Sim" --> P["Modal de Transição de Liderança (Novo Líder)"]
-    P --> A
-    O -- "Não" --> Q["Fim de Partida: Vitória Cooperativa & Relatório BNCC"]
+    B --> C["Líder debate com grupo, seleciona 1 binário e digita o ano"]
+    C --> D{"Líder submete: Código e Ano Corretos?"}
+    D -- "Incorreto" --> E["Penalidade de Pontos + Libera Pista Progressiva"]
+    E --> F{"Completou 3 erros?"}
+    F -- "Não" --> B
+    F -- "Sim" --> G["Decisão Crítica: Continuar ou Revelação Assistida (-150 pts)"]
+    G -- "Continuar" --> B
+    G -- "Revelação Assistida" --> H["Fase 2: Posicionamento na Linha"]
+    D -- "Correto (+Pts)" --> H
+    H --> I["Líder propõe posição [ + Inserir Aqui ]"]
+    I --> J{"Consenso Coletivo: Equipe aprova posição na Linha?"}
+    J -- "Alguém Discordou" --> H
+    J -- "Todos Concordaram" --> K{"Posição Cronológica Correta?"}
+    K -- "Incorreto" --> L["Penalidade + Pista Cronológica"]
+    L --> H
+    K -- "Correto!" --> M["Carta Fixada na Linha do Tempo!"]
+    M --> N{"Restam cartas no baralho?"}
+    N -- "Sim" --> O["Modal de Transição de Liderança (Novo Líder)"]
+    O --> A
+    N -- "Não" --> P["Fim de Partida: Vitória Cooperativa & Relatório BNCC"]
 ```
 
 ---

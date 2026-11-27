@@ -223,7 +223,7 @@ export default function App() {
     if (gameMode === 'wifi') {
       socketService.submitYear(roomState.id, binaryCode, year);
     } else if (localEngineRef.current) {
-      localEngineRef.current.proposeYearVerification(binaryCode, year);
+      localEngineRef.current.submitYear(binaryCode, year);
     }
   };
 

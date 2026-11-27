@@ -358,47 +358,47 @@ class SocketService {
 
   selectBinary(roomId, binaryString) {
     if (!this.socket) return;
-    this.socket.emit('select_binary', { roomId, binaryString });
+    this.socket.emit('select_binary', { roomId, binaryString, playerId: this.playerId });
   }
 
   submitYear(roomId, binaryString, guessedYear) {
     if (!this.socket) return;
-    this.socket.emit('submit_year', { roomId, binaryString, guessedYear });
+    this.socket.emit('submit_year', { roomId, binaryString, guessedYear, playerId: this.playerId });
   }
 
   resolveThirdAttempt(roomId, action) {
     if (!this.socket) return;
-    this.socket.emit('resolve_third_attempt', { roomId, action });
+    this.socket.emit('resolve_third_attempt', { roomId, action, playerId: this.playerId });
   }
 
   resolveTimelineThirdAttempt(roomId, action) {
     if (!this.socket) return;
-    this.socket.emit('resolve_timeline_third_attempt', { roomId, action });
+    this.socket.emit('resolve_timeline_third_attempt', { roomId, action, playerId: this.playerId });
   }
 
   placeCardTimeline(roomId, insertIndex) {
     if (!this.socket) return;
-    this.socket.emit('place_card_timeline', { roomId, insertIndex });
+    this.socket.emit('place_card_timeline', { roomId, insertIndex, playerId: this.playerId });
   }
 
   voteTimelineProposal(roomId, accept) {
     if (!this.socket) return;
-    this.socket.emit('vote_timeline_proposal', { roomId, accept });
+    this.socket.emit('vote_timeline_proposal', { roomId, accept, playerId: this.playerId });
   }
 
   cancelTimelineProposal(roomId) {
     if (!this.socket) return;
-    this.socket.emit('cancel_timeline_proposal', { roomId });
+    this.socket.emit('cancel_timeline_proposal', { roomId, playerId: this.playerId });
   }
 
   revealCentralYear(roomId, cardId = null) {
     if (!this.socket) return;
-    this.socket.emit('reveal_central_year', { roomId, cardId });
+    this.socket.emit('reveal_central_year', { roomId, cardId, playerId: this.playerId });
   }
 
   submitRescueChallenge(roomId, guessedDecimal) {
     if (!this.socket) return;
-    this.socket.emit('submit_rescue_challenge', { roomId, guessedDecimal });
+    this.socket.emit('submit_rescue_challenge', { roomId, guessedDecimal, playerId: this.playerId });
   }
 
   getAdminReports(password) {
