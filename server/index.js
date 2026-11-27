@@ -20,6 +20,14 @@ const io = new Server(server, {
   pingInterval: 25000,
 });
 
+// Rede de segurança: um erro em um evento não derruba o servidor (e não apaga as salas em memória)
+process.on('uncaughtException', (err) => {
+  console.error('[Servidor] Erro não tratado (servidor continua ativo):', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('[Servidor] Promise rejeitada não tratada:', err);
+});
+
 const PORT = process.env.PORT || 3000;
 const PROF_PASSWORD = process.env.PROF_PASSWORD || 'PROF2026';
 const MAX_ROOMS = 5;
@@ -391,6 +399,7 @@ io.on('connection', (socket) => {
       return socket.emit('error_message', 'Apenas o Líder da rodada pode submeter palpites.');
     }
 
+    const currentLeader = room.players[room.leaderIndex] || { name: 'Equipe' };
     const card = room.currentCard;
     const yearNumber = parseInt(guessedYear, 10);
     const isBinaryCorrect = binaryString === card.ano_binario;
@@ -502,6 +511,7 @@ io.on('connection', (socket) => {
       return socket.emit('error_message', 'Apenas o Líder pode registrar a decisão do grupo.');
     }
 
+    const currentLeader = room.players[room.leaderIndex] || { name: 'Equipe' };
     if (action === 'continue') {
       room.promptThirdAttempt = false;
       io.to(roomId).emit('third_attempt_resolved', {
@@ -1025,9 +1035,9 @@ function sanitizeRoomState(room, forSocketOrPlayerId = null) {
   const currentLeader = room.players[room.leaderIndex] || null;
   const isLeader = forSocketOrPlayerId
     ? currentLeader && (
-        currentLeader.id === forSocketOrPlayerId ||
-        currentLeader.socketId === forSocketOrPlayerId
-      )
+      currentLeader.id === forSocketOrPlayerId ||
+      currentLeader.socketId === forSocketOrPlayerId
+    )
     : false;
 
   return {
