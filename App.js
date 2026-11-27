@@ -24,6 +24,7 @@ export default function App() {
   const [verificationFeedback, setVerificationFeedback] = useState(null);
   const [timelineFeedback, setTimelineFeedback] = useState(null);
   const [homeGuideVisible, setHomeGuideVisible] = useState(false);
+  const [leaderTransition, setLeaderTransition] = useState(null);
 
   const localEngineRef = useRef(null);
 
@@ -96,6 +97,13 @@ export default function App() {
       if (data.success) {
         setTimelineFeedback(null);
         if (data.room) setRoomState(data.room);
+        const nextLeader =
+          data.nextLeaderName ||
+          (data.room?.players && data.room?.players[data.room?.leaderIndex]?.name);
+        setLeaderTransition({
+          visible: true,
+          leaderName: nextLeader,
+        });
       } else {
         setTimelineFeedback(data.message);
         if (data.room) setRoomState(data.room);
@@ -285,6 +293,7 @@ export default function App() {
       socketService.disconnect();
     }
     setRoomState(null);
+    setLeaderTransition(null);
     setCurrentScreen('home');
   };
 
@@ -334,6 +343,13 @@ export default function App() {
             setTimelineFeedback(event.message);
           } else {
             setTimelineFeedback(null);
+            const nextLeader =
+              event.nextLeaderName ||
+              (newState?.players && newState?.players[newState?.leaderIndex]?.name);
+            setLeaderTransition({
+              visible: true,
+              leaderName: nextLeader,
+            });
           }
         } else if (event.type === 'third_attempt_resolved') {
           Alert.alert('Decisão Registrada', event.message);
@@ -431,6 +447,8 @@ export default function App() {
           onExitGame={handleLeaveRoom}
           verificationFeedback={verificationFeedback}
           timelineFeedback={timelineFeedback}
+          leaderTransition={leaderTransition}
+          onDismissLeaderTransition={() => setLeaderTransition(null)}
         />
       )}
 

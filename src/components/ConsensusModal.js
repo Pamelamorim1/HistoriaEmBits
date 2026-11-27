@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { Colors } from '../theme/colors';
 
@@ -23,6 +24,7 @@ export default function ConsensusModal({
   const votes = proposal.votes || {};
   const hasVoted = currentUserId ? votes[currentUserId] !== undefined : false;
   const isProposer = currentUserId && proposal.proposerId === currentUserId;
+  const isYearVerification = proposal.type === 'year_verification';
 
   return (
     <Modal
@@ -38,7 +40,9 @@ export default function ConsensusModal({
             <Text style={styles.headerIcon}>🤝</Text>
             <Text style={styles.headerTitle}>Consenso da Equipe</Text>
             <Text style={styles.headerSubtitle}>
-              Todos os jogadores da sala devem aceitar o posicionamento na Linha do Tempo!
+              {isYearVerification
+                ? 'Todos os integrantes da sala devem aprovar o código binário e o ano antes da verificação!'
+                : 'Todos os jogadores da sala devem aceitar o posicionamento na Linha do Tempo!'}
             </Text>
           </View>
 
@@ -48,12 +52,35 @@ export default function ConsensusModal({
               Proposta de <Text style={styles.proposerHighlight}>{proposal.proposerName || 'Líder'}</Text>:
             </Text>
             <Text style={styles.cardTitle}>{proposal.cardTitle}</Text>
-            {proposal.cardYear && (
-              <Text style={styles.cardYear}>Ano convertido: {proposal.cardYear}</Text>
+
+            {isYearVerification ? (
+              <View style={styles.verifDetailsBox}>
+                <View style={styles.verifRow}>
+                  <View style={styles.verifCol}>
+                    <Text style={styles.verifColLabel}>CÓDIGO BINÁRIO:</Text>
+                    <Text style={styles.verifBinaryValue}>{proposal.binaryString}</Text>
+                  </View>
+                  <View style={styles.verifCol}>
+                    <Text style={styles.verifColLabel}>ANO DECIMAL:</Text>
+                    <Text style={styles.verifYearValue}>{proposal.guessedYear}</Text>
+                  </View>
+                </View>
+                <View style={[styles.infoBadge, styles.infoBadgeVerif]}>
+                  <Text style={styles.infoBadgeTextVerif}>
+                    ⚡ Verificar se o código binário e o ano estão corretos
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <>
+                {proposal.cardYear && (
+                  <Text style={styles.cardYear}>Ano convertido: {proposal.cardYear}</Text>
+                )}
+                <View style={styles.infoBadge}>
+                  <Text style={styles.infoBadgeText}>Posição escolhida na Linha do Tempo: Ponto #{proposal.insertIndex}</Text>
+                </View>
+              </>
             )}
-            <View style={styles.infoBadge}>
-              <Text style={styles.infoBadgeText}>Posição escolhida na Linha do Tempo: Ponto #{proposal.insertIndex}</Text>
-            </View>
           </View>
 
           {/* Team Vote Status (Multiplayer) */}
@@ -90,7 +117,10 @@ export default function ConsensusModal({
           {isLocalMode && (
             <View style={styles.localNoticeBox}>
               <Text style={styles.localNoticeText}>
-                🗣️ <Text style={styles.localNoticeBold}>Debate Coletivo:</Text> Todos os integrantes da equipe reunidos concordam que esta carta pertence exatamente a este período?
+                🗣️ <Text style={styles.localNoticeBold}>Debate Coletivo:</Text>{' '}
+                {isYearVerification
+                  ? 'Todos os integrantes da equipe reunidos concordam que este código binário e ano decimal estão corretos?'
+                  : 'Todos os integrantes da equipe reunidos concordam que esta carta pertence exatamente a este período?'}
               </Text>
             </View>
           )}
@@ -225,6 +255,52 @@ const styles = StyleSheet.create({
   infoBadgeText: {
     fontSize: 10,
     color: '#94A3B8',
+    fontWeight: '600',
+  },
+  verifDetailsBox: {
+    marginTop: 8,
+  },
+  verifRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#0F172A',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+    gap: 8,
+  },
+  verifCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  verifColLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#94A3B8',
+    marginBottom: 2,
+  },
+  verifBinaryValue: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#38BDF8',
+    letterSpacing: 1,
+  },
+  verifYearValue: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#F59E0B',
+  },
+  infoBadgeVerif: {
+    backgroundColor: '#1E1B4B',
+    borderColor: '#6366F1',
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  infoBadgeTextVerif: {
+    color: '#A5B4FC',
+    fontSize: 11,
     fontWeight: '600',
   },
   voteListSection: {

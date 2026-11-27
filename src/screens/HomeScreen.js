@@ -331,8 +331,9 @@ export default function HomeScreen({
               placeholder="Ex: SALA-01"
               placeholderTextColor={Colors.textMuted}
               value={roomCode}
-              onChangeText={setRoomCode}
+              onChangeText={(text) => setRoomCode(text.toUpperCase())}
               autoCapitalize="characters"
+              autoCorrect={false}
               maxLength={10}
               onFocus={() => {
                 setTimeout(() => {
@@ -533,6 +534,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: Colors.primary,
     marginBottom: 14,
+    textTransform: 'uppercase',
   },
   menuButtons: {
     gap: 12,

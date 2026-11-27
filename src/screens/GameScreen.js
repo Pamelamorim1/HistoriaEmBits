@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import ThirdAttemptModal from '../components/ThirdAttemptModal';
 import TimelineView from '../components/TimelineView';
 import ConsensusModal from '../components/ConsensusModal';
 import RescueChallengeModal from '../components/RescueChallengeModal';
+import LeaderTransitionModal from '../components/LeaderTransitionModal';
 
 export default function GameScreen({
   roomState,
@@ -38,10 +39,16 @@ export default function GameScreen({
   onExitGame,
   verificationFeedback,
   timelineFeedback,
+  leaderTransition,
+  onDismissLeaderTransition,
 }) {
   const [guideVisible, setGuideVisible] = useState(false);
   const [typedYear, setTypedYear] = useState('');
   const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    setTypedYear('');
+  }, [roomState?.currentCardIndex, roomState?.phase]);
 
   const handlePromptRevealCentralYear = (cardId = null, cardTitle = null) => {
     const label = cardTitle ? `de "${cardTitle}"` : 'desta carta da linha do tempo';
@@ -107,7 +114,6 @@ export default function GameScreen({
       return;
     }
     onSubmitYear(selectedBinary, typedYear.trim());
-    setTypedYear('');
   };
 
   return (
@@ -412,6 +418,14 @@ export default function GameScreen({
         isLocalMode={isLocalMode}
         onVote={onVoteProposal}
         onCancel={onCancelProposal}
+      />
+
+      {/* Modal Alerta de Transição de Líder após Posicionamento */}
+      <LeaderTransitionModal
+        visible={!!leaderTransition?.visible}
+        isLeader={isLeader}
+        leaderName={leaderTransition?.leaderName || currentLeaderName}
+        onClose={onDismissLeaderTransition}
       />
     </View>
   );

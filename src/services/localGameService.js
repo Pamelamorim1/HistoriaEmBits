@@ -387,10 +387,13 @@ export class LocalGameEngine {
       this.promptTimelineThirdAttempt = false;
       this.phase = 'decoding';
 
+      const nextLeader = this.players[this.leaderIndex];
+
       this.notify({
         type: 'timeline_placed',
         success: true,
         message: successMessage,
+        nextLeaderName: nextLeader ? nextLeader.name : null,
       });
     }
   }

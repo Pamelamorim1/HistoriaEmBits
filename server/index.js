@@ -309,9 +309,7 @@ io.on('connection', (socket) => {
           if (room.timelineProposal) {
             const allAccepted = room.players.every((p) => room.timelineProposal.votes[p.id] === true);
             if (allAccepted) {
-              const targetIndex = room.timelineProposal.insertIndex;
-              room.timelineProposal = null;
-              executeTimelinePlacement(room, targetIndex);
+              executeActiveProposal(room);
             }
           }
           io.to(cleanRoomId).emit('player_left', {
@@ -390,15 +388,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // 5. Submeter Ano Decimal (Apenas Líder)
-  socket.on('submit_year', ({ roomId, binaryString, guessedYear }) => {
-    const room = rooms.get(roomId);
-    if (!room || room.status !== 'playing' || room.phase !== 'decoding') return;
-
-    if (!isSocketLeader(room, socket)) {
-      return socket.emit('error_message', 'Apenas o Líder da rodada pode submeter palpites.');
-    }
-
+  function executeYearSubmission(room, binaryString, guessedYear) {
     const currentLeader = room.players[room.leaderIndex] || { name: 'Equipe' };
     const card = room.currentCard;
     const yearNumber = parseInt(guessedYear, 10);
@@ -431,7 +421,7 @@ io.on('connection', (socket) => {
       room.phase = 'timeline';
       room.promptThirdAttempt = false;
 
-      io.to(roomId).emit('year_verified', {
+      io.to(room.id).emit('year_verified', {
         success: true,
         pointsEarned,
         message: `Ano decodificado com sucesso! (+${pointsEarned} pontos) Agora definam a posição na Linha do Tempo.`,
@@ -488,7 +478,7 @@ io.on('connection', (socket) => {
       const zeroState = handleZeroScoreTransition(room, wasAlreadyZero);
       if (zeroState === 'game_over') return;
 
-      io.to(roomId).emit('year_verified', {
+      io.to(room.id).emit('year_verified', {
         success: false,
         message: isBinaryCorrect
           ? 'Código binário correto, mas cálculo decimal incorreto! Verifique a conversão.'
@@ -500,6 +490,43 @@ io.on('connection', (socket) => {
         room: sanitizeRoomState(room),
       });
     }
+  }
+
+  // 5. Submeter Ano Decimal (Apenas Líder - Requer Consenso em Salas Multiplayer)
+  socket.on('submit_year', ({ roomId, binaryString, guessedYear }) => {
+    const room = rooms.get(roomId);
+    if (!room || room.status !== 'playing' || room.phase !== 'decoding') return;
+
+    if (!isSocketLeader(room, socket)) {
+      return socket.emit('error_message', 'Apenas o Líder da rodada pode submeter palpites.');
+    }
+
+    if (room.timelineProposal) return;
+
+    // Se houver apenas 1 jogador conectado (ex: teste solo), executa direto sem necessidade de consenso
+    if (room.players.length <= 1) {
+      return executeYearSubmission(room, binaryString, guessedYear);
+    }
+
+    const currentLeader = room.players[room.leaderIndex] || { name: 'Equipe' };
+    const votes = {};
+    votes[currentLeader.id] = true; // Propositor (Líder) já concorda
+
+    room.timelineProposal = {
+      type: 'year_verification',
+      binaryString,
+      guessedYear,
+      proposerId: currentLeader.id,
+      proposerName: currentLeader.name,
+      cardTitle: room.currentCard?.titulo,
+      cardYear: guessedYear,
+      votes,
+    };
+
+    io.to(roomId).emit('timeline_proposal_updated', {
+      proposal: room.timelineProposal,
+      room: sanitizeRoomState(room),
+    });
   });
 
   // 6. Decisão Crítica do 3º Erro (Apenas Líder)
@@ -626,9 +653,13 @@ io.on('connection', (socket) => {
       room.isRevealedAssisted = false;
       room.phase = 'decoding';
 
+      const nextLeader = room.players[room.leaderIndex];
+
       io.to(room.id).emit('timeline_placed', {
         success: true,
         message: successMessage,
+        nextLeaderName: nextLeader ? nextLeader.name : null,
+        nextLeaderId: nextLeader ? nextLeader.id : null,
         room: sanitizeRoomState(room),
       });
     }
@@ -733,6 +764,17 @@ io.on('connection', (socket) => {
     }
   }
 
+  function executeActiveProposal(room) {
+    if (!room || !room.timelineProposal) return;
+    const proposal = room.timelineProposal;
+    room.timelineProposal = null;
+    if (proposal.type === 'year_verification') {
+      executeYearSubmission(room, proposal.binaryString, proposal.guessedYear);
+    } else {
+      executeTimelinePlacement(room, proposal.insertIndex);
+    }
+  }
+
   // 7. Propor Posicionamento na Linha do Tempo (Requer Consenso de Todos)
   socket.on('place_card_timeline', ({ roomId, insertIndex }) => {
     const room = rooms.get(roomId);
@@ -741,6 +783,8 @@ io.on('connection', (socket) => {
     if (!isSocketLeader(room, socket)) {
       return socket.emit('error_message', 'Apenas o Líder da rodada pode propor o posicionamento da carta.');
     }
+
+    if (room.timelineProposal) return;
 
     // Se houver apenas 1 jogador conectado (ex: teste solo), executa direto
     if (room.players.length <= 1) {
@@ -753,6 +797,7 @@ io.on('connection', (socket) => {
     votes[currentLeader.id] = true; // Propositor (Líder) já concorda
 
     room.timelineProposal = {
+      type: 'timeline',
       insertIndex,
       proposerId: currentLeader.id,
       proposerName: currentLeader.name,
@@ -767,7 +812,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Votar na Proposta de Posicionamento (Consenso Coletivo)
+  // Votar na Proposta (Posicionamento ou Verificação de Ano - Consenso Coletivo)
   socket.on('vote_timeline_proposal', ({ roomId, accept }) => {
     const room = rooms.get(roomId);
     if (!room || !room.timelineProposal) return;
@@ -775,8 +820,11 @@ io.on('connection', (socket) => {
     const voter = findPlayerInRoom(room, socket);
     if (!voter) return;
 
+    const isYearVerif = room.timelineProposal.type === 'year_verification';
+
     if (!accept) {
-      const rejectedMsg = `A proposta de posicionamento foi rejeitada por ${voter.name}. Conversem em grupo e escolham outra posição!`;
+      const actionName = isYearVerif ? 'de verificação do ano' : 'de posicionamento';
+      const rejectedMsg = `A proposta ${actionName} foi rejeitada por ${voter.name}. Conversem em grupo e cheguem a um novo consenso!`;
       room.timelineProposal = null;
       return io.to(roomId).emit('timeline_proposal_rejected', {
         message: rejectedMsg,
@@ -790,9 +838,7 @@ io.on('connection', (socket) => {
     const allAccepted = room.players.every((p) => room.timelineProposal.votes[p.id] === true);
 
     if (allAccepted) {
-      const targetIndex = room.timelineProposal.insertIndex;
-      room.timelineProposal = null;
-      executeTimelinePlacement(room, targetIndex);
+      executeActiveProposal(room);
     } else {
       io.to(roomId).emit('timeline_proposal_updated', {
         proposal: room.timelineProposal,
@@ -801,13 +847,16 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Cancelar Proposta de Posicionamento
+  // Cancelar Proposta
   socket.on('cancel_timeline_proposal', ({ roomId }) => {
     const room = rooms.get(roomId);
     if (!room || !room.timelineProposal) return;
+    const isYearVerif = room.timelineProposal.type === 'year_verification';
     room.timelineProposal = null;
     io.to(roomId).emit('timeline_proposal_cancelled', {
-      message: 'Proposta de posicionamento cancelada pela equipe.',
+      message: isYearVerif
+        ? 'Proposta de verificação de ano cancelada pelo Líder.'
+        : 'Proposta de posicionamento cancelada pela equipe.',
       room: sanitizeRoomState(room),
     });
   });
@@ -1014,9 +1063,7 @@ io.on('connection', (socket) => {
               if (currentRoom.timelineProposal) {
                 const allAccepted = currentRoom.players.every((p) => currentRoom.timelineProposal.votes[p.id] === true);
                 if (allAccepted) {
-                  const targetIndex = currentRoom.timelineProposal.insertIndex;
-                  currentRoom.timelineProposal = null;
-                  executeTimelinePlacement(currentRoom, targetIndex);
+                  executeActiveProposal(currentRoom);
                 }
               }
               io.to(roomId).emit('player_left', {
