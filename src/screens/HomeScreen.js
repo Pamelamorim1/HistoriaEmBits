@@ -115,7 +115,7 @@ export default function HomeScreen({
         setScanStatus('');
         Alert.alert(
           'Servidor Não Encontrado',
-          'Não foi possível detectar o servidor automaticamente.\n\n1. Verifique se "npm run server" está rodando no PC.\n2. O PC e o celular devem estar na mesma rede Wi-Fi ou no Roteador do celular.\n3. Digite o IP manualmente (veja o IP listado no console do servidor).'
+          `Não foi possível detectar o servidor automaticamente ${res.serverUrl}.\n\n1. Verifique se "npm run server" está rodando no PC.\n2. O PC e o celular devem estar na mesma rede Wi-Fi ou no Roteador do celular.\n3. Digite o IP manualmente (veja o IP listado no console do servidor).`
         );
       }
     } finally {
@@ -422,22 +422,6 @@ export default function HomeScreen({
             <Text style={styles.formDesc}>
               Peça o código da sala ao líder que criou a turma (ex: SALA-01, SALA-02).
             </Text>
-
-            {/* Quick 1-touch button for Auto-Discovery */}
-            <TouchableOpacity
-              style={styles.hotspotQuickBtn}
-              disabled={isScanning}
-              onPress={handleAutoDiscover}
-            >
-              <Text style={styles.hotspotQuickBtnText}>
-                {isScanning
-                  ? '⏳ Buscando servidor na rede...'
-                  : '🔍 Detectar Servidor na Rede (Wi-Fi / Roteador)'}
-              </Text>
-            </TouchableOpacity>
-            {isScanning && scanStatus ? (
-              <Text style={styles.scanStatusText}>{scanStatus}</Text>
-            ) : null}
 
             <Text style={styles.inputLabel}>CÓDIGO DA SALA:</Text>
             <TextInput

@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 export const HOTSPOT_DEFAULT_URL =
   process.env.EXPO_PUBLIC_SERVER_URL ||
   process.env.HOTSPOT_DEFAULT_URL ||
-  'https://rover-excellent-import-believed.trycloudflare.com';
+  'https://oct-helen-insured-trees.trycloudflare.com';
 
 export function getDefaultServerUrl() {
   if (HOTSPOT_DEFAULT_URL) {
@@ -25,7 +25,7 @@ export function getDefaultServerUrl() {
   } catch (err) {
     console.log('Erro ao detectar hostUri:', err);
   }
-  return 'https://rover-excellent-import-believed.trycloudflare.com';
+  return 'https://oct-helen-insured-trees.trycloudflare.com';
 }
 
 class SocketService {
@@ -37,6 +37,13 @@ class SocketService {
     this.currentRoomId = null;
     this.playerName = null;
     this.heartbeatTimer = null;
+    this.hasNotifiedConnectionError = false;
+  }
+
+  notifyConnectionError() {
+    if (this.hasNotifiedConnectionError) return;
+    this.hasNotifiedConnectionError = true;
+    this.emitInternal('error_message', 'Não foi possível conectar ao servidor.');
   }
 
   getOrCreatePlayerId() {
@@ -227,6 +234,8 @@ class SocketService {
       return this.socket;
     }
 
+    this.hasNotifiedConnectionError = false;
+
     if (this.socket) {
       this.socket.disconnect();
     }
@@ -242,6 +251,7 @@ class SocketService {
 
     this.socket.on('connect', () => {
       console.log('[SocketService] Conectado ao servidor:', this.socket.id);
+      this.hasNotifiedConnectionError = false;
       this.emitInternal('connection_change', { connected: true, id: this.socket.id });
       this.startHeartbeat();
       if (this.currentRoomId && this.playerId) {
@@ -255,16 +265,22 @@ class SocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('[SocketService] Desconectado:', reason);
+      if (reason !== 'io client disconnect') {
+        if (!this.hasNotifiedConnectionError) {
+          console.log('[SocketService] Desconectado do servidor:', reason);
+        }
+        this.notifyConnectionError();
+      } else {
+        console.log('[SocketService] Desconectado:', reason);
+      }
       this.emitInternal('connection_change', { connected: false, reason });
     });
 
     this.socket.on('connect_error', (error) => {
-      console.log('[SocketService] Erro de conexão:', error.message);
-      this.emitInternal(
-        'error_message',
-        `Não foi possível conectar ao servidor.\n\n1. Verifique se o servidor está rodando no terminal com "npm run server".\n2. Verifique se o celular está no mesmo Wi-Fi.`
-      );
+      if (!this.hasNotifiedConnectionError) {
+        console.log('[SocketService] Erro de conexão:', error.message);
+      }
+      this.notifyConnectionError();
       this.emitInternal('connection_error', error.message);
     });
 

@@ -164,7 +164,7 @@ export default function App() {
     });
 
     const unsubError = socketService.subscribe('error_message', (msg) => {
-      Alert.alert('Atenção', msg);
+      Alert.alert('Aviso', msg);
     });
 
     return () => {
