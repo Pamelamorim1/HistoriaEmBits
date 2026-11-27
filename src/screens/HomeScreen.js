@@ -30,7 +30,9 @@ export default function HomeScreen({
 }) {
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [mode, setMode] = useState('menu'); // 'menu' | 'join' | 'create' | 'config'
+  const [mode, setMode] = useState('menu'); // 'menu' | 'join' | 'create' | 'config' | 'local'
+  const [localGameType, setLocalGameType] = useState('coop'); // 'coop' | 'solo'
+  const [localCardCount, setLocalCardCount] = useState(10); // 4 | 6 | 8 | 10
   const [tempIp, setTempIp] = useState(serverUrl || '192.168.1.100:3000');
   const [isScanning, setIsScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState('');
@@ -143,7 +145,14 @@ export default function HomeScreen({
   };
 
   const handleLocalStart = () => {
-    onStartLocalGame(playerName.trim() || 'Equipe 1');
+    setMode('local');
+  };
+
+  const handleStartConfiguredLocalGame = () => {
+    const isSolo = localGameType === 'solo';
+    const name = playerName.trim() || (isSolo ? 'Jogador 1' : 'Equipe 1');
+    const cardsToPlay = isSolo ? localCardCount : 10;
+    onStartLocalGame(name, cardsToPlay, isSolo);
   };
 
   const handleSaveIp = () => {
@@ -271,6 +280,111 @@ export default function HomeScreen({
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+        )}
+
+        {/* Form: Partida Local (Coletivo vs Individual) */}
+        {mode === 'local' && (
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Partida Local (Mesa Única)</Text>
+            <Text style={styles.formDesc}>
+              Jogue direto neste aparelho, ideal para salas de aula, mesas de grupo ou treino individual.
+            </Text>
+
+            <Text style={styles.inputLabel}>FORMATO DA PARTIDA:</Text>
+            <View style={styles.modeOptionRow}>
+              <TouchableOpacity
+                style={[
+                  styles.modeOptionCard,
+                  localGameType === 'coop' && styles.modeOptionCardActive,
+                ]}
+                onPress={() => {
+                  setLocalGameType('coop');
+                  setLocalCardCount(10);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modeOptionIcon}>👥</Text>
+                <Text style={[styles.modeOptionTitle, localGameType === 'coop' && styles.modeOptionTitleActive]}>
+                  Modo Coletivo
+                </Text>
+                <Text style={styles.modeOptionDesc}>
+                  Em equipe (10 cartas). Debate coletivo e consenso a cada palpite.
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modeOptionCard,
+                  localGameType === 'solo' && styles.modeOptionCardActive,
+                ]}
+                onPress={() => setLocalGameType('solo')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modeOptionIcon}>👤</Text>
+                <Text style={[styles.modeOptionTitle, localGameType === 'solo' && styles.modeOptionTitleActive]}>
+                  Modo Individual
+                </Text>
+                <Text style={styles.modeOptionDesc}>
+                  Treino solo. Escolha a quantidade de cartas para solucionar.
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Seletor de Quantidade de Cartas (apenas se Individual) */}
+            {localGameType === 'solo' && (
+              <View style={styles.cardsCountSection}>
+                <Text style={styles.inputLabel}>QUANTIDADE DE CARTAS PARA SOLUCIONAR:</Text>
+                <View style={styles.cardCountOptionsRow}>
+                  {[4, 6, 8, 10].map((num) => (
+                    <TouchableOpacity
+                      key={num}
+                      style={[
+                        styles.cardCountBtn,
+                        localCardCount === num && styles.cardCountBtnActive,
+                      ]}
+                      onPress={() => setLocalCardCount(num)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.cardCountBtnNumber,
+                          localCardCount === num && styles.cardCountBtnNumberActive,
+                        ]}
+                      >
+                        {num}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.cardCountBtnLabel,
+                          localCardCount === num && styles.cardCountBtnLabelActive,
+                        ]}
+                      >
+                        cartas
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.cardCountHint}>
+                  {localCardCount === 4 && '⚡ Soluciona 4 cartas (+ 1 central inicial).'}
+                  {localCardCount === 6 && '🎯 Soluciona 6 cartas (+ 1 central inicial).'}
+                  {localCardCount === 8 && '🧠 Soluciona 8 cartas (+ 1 central inicial).'}
+                  {localCardCount === 10 && '🏆 Soluciona 10 cartas (+ 1 central inicial).'}
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity style={styles.confirmBtn} onPress={handleStartConfiguredLocalGame}>
+              <Text style={styles.confirmBtnText}>
+                {localGameType === 'coop'
+                  ? 'Iniciar Partida Coletiva (10 cartas)'
+                  : `Iniciar Partida Individual (${localCardCount} cartas)`}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setMode('menu')}>
+              <Text style={styles.cancelBtnText}>Voltar ao Menu</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -721,5 +835,95 @@ const styles = StyleSheet.create({
     marginTop: -8,
     marginBottom: 8,
     paddingHorizontal: 4,
+  },
+  modeOptionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  modeOptionCard: {
+    flex: 1,
+    backgroundColor: Colors.surfaceLight,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.surfaceBorder,
+    alignItems: 'center',
+  },
+  modeOptionCardActive: {
+    borderColor: Colors.primary,
+    backgroundColor: '#0C4A6E',
+  },
+  modeOptionIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  modeOptionTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  modeOptionTitleActive: {
+    color: '#38BDF8',
+  },
+  modeOptionDesc: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  cardsCountSection: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginBottom: 16,
+  },
+  cardCountOptionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  cardCountBtn: {
+    flex: 1,
+    backgroundColor: Colors.surfaceLight,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: Colors.surfaceBorder,
+    alignItems: 'center',
+  },
+  cardCountBtnActive: {
+    backgroundColor: '#1E1B4B',
+    borderColor: '#818CF8',
+  },
+  cardCountBtnNumber: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.text,
+  },
+  cardCountBtnNumberActive: {
+    color: '#A5B4FC',
+  },
+  cardCountBtnLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: Colors.textMuted,
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+  cardCountBtnLabelActive: {
+    color: '#818CF8',
+  },
+  cardCountHint: {
+    fontSize: 11,
+    color: Colors.secondary,
+    textAlign: 'center',
+    fontWeight: '600',
+    marginTop: 4,
   },
 });

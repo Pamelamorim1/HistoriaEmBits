@@ -10,17 +10,16 @@ function shuffle(array) {
 }
 
 export class LocalGameEngine {
-  constructor(playerNames = ['Jogador 1']) {
+  constructor(playerNames = ['Jogador 1'], totalCards = 10, isIndividual = false) {
     this.players = playerNames.map((name, index) => ({
       id: `local-p-${index}`,
       name,
       isHost: index === 0,
     }));
     this.leaderIndex = 0;
-    const allCards = shuffle([deckData.carta_central_inicial, ...deckData.cartas]);
-    const randomCentral = allCards[0];
+    this.isIndividual = !!isIndividual;
     const centralCard = {
-      ...randomCentral,
+      ...deckData.carta_central_inicial,
       posicaoFixa: true,
       anoRevelado: false,
     };
@@ -28,7 +27,8 @@ export class LocalGameEngine {
     this.score = 1000;
     this.startTime = new Date().toISOString();
     this.endTime = null;
-    this.cardsDeck = allCards.slice(1);
+    this.cardsDeck = shuffle(deckData.cartas);
+    this.totalCardsCount = Math.max(1, Math.min(this.cardsDeck.length, totalCards || 10));
     this.currentCardIndex = 0;
     this.currentCard = this.cardsDeck[0];
     this.timeline = [centralCard];
@@ -53,19 +53,23 @@ export class LocalGameEngine {
 
   getState() {
     const currentLeader = this.players[this.leaderIndex];
+    const distractors = this.currentCard && Array.isArray(this.currentCard.distratores_binarios)
+      ? this.currentCard.distratores_binarios
+      : [];
     const binaryOptions = this.currentCard
-      ? shuffle([this.currentCard.ano_binario, ...this.currentCard.distratores_binarios])
+      ? shuffle([this.currentCard.ano_binario, ...distractors])
       : [];
 
     return {
-      id: 'SALA-LOCAL',
+      id: this.isIndividual ? 'MODO-INDIVIDUAL' : 'SALA-LOCAL',
       status: this.phase === 'finished' ? 'finished' : 'playing',
       phase: this.phase,
       score: this.score,
       players: this.players,
       leaderIndex: this.leaderIndex,
-      currentLeaderName: currentLeader ? currentLeader.name : 'Equipe',
+      currentLeaderName: currentLeader ? currentLeader.name : (this.isIndividual ? 'Jogador' : 'Equipe'),
       isLeader: true, // No modo local compartilhado, o aparelho atual é do líder da vez
+      isIndividual: this.isIndividual,
       currentCardRound: this.currentCard
         ? {
             id: this.currentCard.id,
@@ -113,7 +117,7 @@ export class LocalGameEngine {
         };
       }),
       currentCardIndex: this.currentCardIndex,
-      totalCards: Math.min(this.cardsDeck.length, 10),
+      totalCards: this.totalCardsCount,
     };
   }
 
@@ -320,9 +324,33 @@ export class LocalGameEngine {
     }
   }
 
-  proposeTimelinePlacement(insertIndex) {
+  proposeYearVerification(binaryString, guessedYear) {
+    if (this.isIndividual) {
+      return this.submitYear(binaryString, guessedYear);
+    }
     const currentLeader = this.players[this.leaderIndex];
     this.timelineProposal = {
+      type: 'year_verification',
+      binaryString,
+      guessedYear,
+      proposerName: currentLeader.name,
+      cardTitle: this.currentCard?.titulo,
+      cardYear: guessedYear,
+      votes: { 'local-team': true },
+    };
+    this.notify({
+      type: 'timeline_proposal_updated',
+      proposal: this.timelineProposal,
+    });
+  }
+
+  proposeTimelinePlacement(insertIndex) {
+    if (this.isIndividual) {
+      return this.placeCardTimeline(insertIndex);
+    }
+    const currentLeader = this.players[this.leaderIndex];
+    this.timelineProposal = {
+      type: 'timeline',
       insertIndex,
       proposerName: currentLeader.name,
       cardTitle: this.currentCard?.titulo,
@@ -342,11 +370,19 @@ export class LocalGameEngine {
     });
   }
 
-  confirmTimelinePlacement() {
+  confirmProposal() {
     if (!this.timelineProposal) return;
-    const targetIndex = this.timelineProposal.insertIndex;
+    const proposal = this.timelineProposal;
     this.timelineProposal = null;
-    this.placeCardTimeline(targetIndex);
+    if (proposal.type === 'year_verification') {
+      this.submitYear(proposal.binaryString, proposal.guessedYear);
+    } else {
+      this.placeCardTimeline(proposal.insertIndex);
+    }
+  }
+
+  confirmTimelinePlacement() {
+    this.confirmProposal();
   }
 
   findCorrectTimelineIndex(year) {
@@ -358,7 +394,7 @@ export class LocalGameEngine {
 
   advanceTimelineRound(successMessage) {
     const nextIndex = this.currentCardIndex + 1;
-    const totalCards = Math.min(this.cardsDeck.length, 10);
+    const totalCards = this.totalCardsCount;
 
     // Na próxima escolha de posição, todas as cartas voltam a ter o ano decimal oculto
     this.timeline.forEach((c) => {

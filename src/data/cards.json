@@ -6,8 +6,17 @@
     "titulo": "Independência do Brasil",
     "ano_decimal": 1822,
     "ano_binario": "11100011110",
+    "distratores_binarios": [
+      "11100010000",
+      "11100100111"
+    ],
     "imagem_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Independ%C3%AAncia_ou_Morte.jpg/800px-Independ%C3%AAncia_ou_Morte.jpg",
-    "resumo_historico": "Proclamação da ruptura política entre Brasil e Portugal às margens do riacho Ipiranga por D. Pedro I."
+    "resumo_historico": "Proclamação da ruptura política entre Brasil e Portugal às margens do riacho Ipiranga por D. Pedro I.",
+    "dicas": {
+      "dica_1_contexto": "Acontecimento do início do século XIX ocorrido às margens do Ipiranga.",
+      "dica_2_matematica": "O ano termina no início da década de 1820. O código 11100010000 (1808) está incorreto.",
+      "dica_3_especifica": "O ano exato é um número par entre 1820 e 1824."
+    }
   },
   "cartas": [
     {

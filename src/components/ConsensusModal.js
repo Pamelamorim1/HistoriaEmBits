@@ -83,6 +83,16 @@ export default function ConsensusModal({
             )}
           </View>
 
+          {/* Question Banner: Pergunta de Consenso */}
+          <View style={styles.questionBanner}>
+            <Text style={styles.questionText}>
+              ❓ <Text style={styles.questionBold}>Pergunta para a Equipe:</Text>{' '}
+              {isYearVerification
+                ? 'Todos concordam que o código binário e o ano decimal estão corretos?'
+                : 'Todos concordam que esta carta deve ser posicionada neste ponto da Linha do Tempo?'}
+            </Text>
+          </View>
+
           {/* Team Vote Status (Multiplayer) */}
           {!isLocalMode && (
             <View style={styles.voteListSection}>
@@ -302,6 +312,24 @@ const styles = StyleSheet.create({
     color: '#A5B4FC',
     fontSize: 11,
     fontWeight: '600',
+  },
+  questionBanner: {
+    backgroundColor: '#1E1B4B',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#6366F1',
+    marginBottom: 12,
+  },
+  questionText: {
+    fontSize: 12,
+    color: '#E0E7FF',
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  questionBold: {
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   voteListSection: {
     marginBottom: 14,

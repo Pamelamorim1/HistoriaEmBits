@@ -223,7 +223,7 @@ export default function App() {
     if (gameMode === 'wifi') {
       socketService.submitYear(roomState.id, binaryCode, year);
     } else if (localEngineRef.current) {
-      localEngineRef.current.submitYear(binaryCode, year);
+      localEngineRef.current.proposeYearVerification(binaryCode, year);
     }
   };
 
@@ -256,7 +256,7 @@ export default function App() {
       socketService.voteTimelineProposal(roomState.id, accept);
     } else if (localEngineRef.current) {
       if (accept) {
-        localEngineRef.current.confirmTimelinePlacement();
+        localEngineRef.current.confirmProposal();
       } else {
         localEngineRef.current.cancelTimelineProposal();
       }
@@ -320,10 +320,10 @@ export default function App() {
   }, [currentScreen, gameMode]);
 
   // Handlers para Modo Local
-  const handleStartLocalGame = (teamName) => {
+  const handleStartLocalGame = (teamName, totalCards = 10, isIndividual = false) => {
     setGameMode('local');
     const playersList = Array.isArray(teamName) ? teamName : [teamName];
-    const engine = new LocalGameEngine(playersList);
+    const engine = new LocalGameEngine(playersList, totalCards, isIndividual);
     localEngineRef.current = engine;
 
     engine.subscribe((newState, event) => {
@@ -346,10 +346,12 @@ export default function App() {
             const nextLeader =
               event.nextLeaderName ||
               (newState?.players && newState?.players[newState?.leaderIndex]?.name);
-            setLeaderTransition({
-              visible: true,
-              leaderName: nextLeader,
-            });
+            if (!newState?.isIndividual) {
+              setLeaderTransition({
+                visible: true,
+                leaderName: nextLeader,
+              });
+            }
           }
         } else if (event.type === 'third_attempt_resolved') {
           Alert.alert('Decisão Registrada', event.message);

@@ -65,8 +65,9 @@ function shuffle(array) {
 }
 
 function prepareCardRound(card) {
-  // Suffle the 3 binary options: 1 correct + 2 distractors
-  const binaryOptions = shuffle([card.ano_binario, ...card.distratores_binarios]);
+  if (!card) return null;
+  const distractors = Array.isArray(card.distratores_binarios) ? card.distratores_binarios : [];
+  const binaryOptions = shuffle([card.ano_binario, ...distractors]);
   return {
     id: card.id,
     titulo: card.titulo,
@@ -332,18 +333,14 @@ io.on('connection', (socket) => {
     }
 
     // Setup initial reference card (random from full deck pool, year hidden until points spent)
-    const allCardsPool = [deckData.carta_central_inicial, ...deckData.cartas];
-    const shuffledAll = shuffle(allCardsPool);
-
-    const randomCentral = shuffledAll[0];
     const centralCard = {
-      ...randomCentral,
+      ...deckData.carta_central_inicial,
       posicaoFixa: true,
       anoRevelado: false,
     };
 
     // Remaining cards form the game deck
-    const shuffledCards = shuffledAll.slice(1);
+    const shuffledCards = shuffle(deckData.cartas);
 
     room.status = 'playing';
     room.startTime = new Date().toISOString();
@@ -494,7 +491,8 @@ io.on('connection', (socket) => {
 
   // 5. Submeter Ano Decimal (Apenas Líder - Requer Consenso em Salas Multiplayer)
   socket.on('submit_year', ({ roomId, binaryString, guessedYear }) => {
-    const room = rooms.get(roomId);
+    const cleanRoomId = (roomId || socket.roomId || '').trim().toUpperCase();
+    const room = rooms.get(cleanRoomId);
     if (!room || room.status !== 'playing' || room.phase !== 'decoding') return;
 
     if (!isSocketLeader(room, socket)) {
@@ -523,7 +521,7 @@ io.on('connection', (socket) => {
       votes,
     };
 
-    io.to(roomId).emit('timeline_proposal_updated', {
+    io.to(room.id).emit('timeline_proposal_updated', {
       proposal: room.timelineProposal,
       room: sanitizeRoomState(room),
     });
